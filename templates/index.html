@@ -19,7 +19,16 @@
 
   <!-- ===== 侧边栏：计划列表 ===== -->
   <aside id="sidebar">
-    <div class="sidebar-label">我的计划</div>
+    <div class="sidebar-label">导航</div>
+    <a class="plan-item active" href="/" style="text-decoration:none;color:inherit;" id="nav-plans">
+      <span class="plan-icon">📋</span>
+      <span class="plan-name">训练计划</span>
+    </a>
+    <a class="plan-item" href="/how-to" style="text-decoration:none;color:inherit;">
+      <span class="plan-icon">📖</span>
+      <span class="plan-name">使用说明</span>
+    </a>
+    <div class="sidebar-label" style="margin-top:12px;">我的计划</div>
     <div id="plan-list">
       <!-- 由 JS 动态渲染 -->
     </div>

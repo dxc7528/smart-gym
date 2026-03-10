@@ -129,7 +129,7 @@ function addExerciseCard(ex = null, idx = null) {
         <input class="ex-rest" type="number" min="0" max="600" value="${rest}" />
       </div>
       <div class="field-group">
-        <label>节奏 (离心-停顿-向心)</label>
+        <label>节奏 (发力-停顿-复原)</label>
         <div class="tempo-inputs">
           <input class="ex-t0" type="number" min="0" max="10" step="0.5" value="${tempo[0]}" />
           <span class="tempo-sep">-</span>

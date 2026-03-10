@@ -36,6 +36,11 @@ def index():
     return render_template("index.html")
 
 
+@app.route("/how-to")
+def how_to():
+    return render_template("how_to.html")
+
+
 # ---------- 训练计划 CRUD ----------
 
 
