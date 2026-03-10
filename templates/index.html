@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Gym — 训练计划管理</title>
+  <meta name="description" content="管理你的训练计划，一键生成带语音提示的训练音频" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+<div class="layout">
+
+  <!-- ===== 顶部栏 ===== -->
+  <header>
+    <span class="logo-icon">🏋️</span>
+    <span class="logo">Smart Gym</span>
+    <span class="subtitle">训练计划 · 语音提示</span>
+  </header>
+
+  <!-- ===== 侧边栏：计划列表 ===== -->
+  <aside id="sidebar">
+    <div class="sidebar-label">我的计划</div>
+    <div id="plan-list">
+      <!-- 由 JS 动态渲染 -->
+    </div>
+    <button class="btn-new-plan" id="btn-new-plan">
+      <span>＋</span> 新建计划
+    </button>
+  </aside>
+
+  <!-- ===== 主内容区 ===== -->
+  <main id="main-content">
+    <!-- 空状态 -->
+    <div class="empty-state" id="empty-state">
+      <div class="empty-icon">📋</div>
+      <h2>还没有训练计划</h2>
+      <p>点击左侧「新建计划」开始吧</p>
+    </div>
+
+    <!-- 计划编辑器（选中/新建计划时显示） -->
+    <div class="plan-editor" id="plan-editor" style="display:none;">
+
+      <!-- 标题 + 操作按钮 -->
+      <div class="plan-header">
+        <input
+          type="text"
+          class="plan-title-input"
+          id="plan-title"
+          placeholder="输入训练计划名称…"
+          maxlength="60"
+        />
+        <div class="btn-group">
+          <button class="btn btn-danger btn-sm" id="btn-delete-plan" title="删除此计划">
+            🗑 删除
+          </button>
+          <button class="btn btn-primary" id="btn-save-plan">
+            <span class="btn-icon">💾</span>
+            <span class="spinner"></span>
+            保存
+          </button>
+        </div>
+      </div>
+
+      <!-- 动作列表 -->
+      <div class="exercises-container">
+        <div class="section-header">
+          <span class="section-title">动作列表</span>
+          <span class="badge badge-success" id="exercise-count">0 个动作</span>
+        </div>
+        <div id="exercise-list">
+          <!-- 由 JS 动态渲染 -->
+        </div>
+        <button class="btn btn-add" id="btn-add-exercise">
+          ＋ 添加动作
+        </button>
+      </div>
+
+      <!-- 音频区 -->
+      <div class="audio-panel" id="audio-panel">
+        <div class="audio-info">
+          <h3>🎵 训练语音音频</h3>
+          <p id="audio-desc">点击生成后，可在页面内直接播放完整训练引导音频</p>
+        </div>
+        <button class="btn btn-ghost" id="btn-gen-audio">
+          <span class="btn-icon">⚡</span>
+          <span class="spinner"></span>
+          生成音频
+        </button>
+        <audio id="audio-player" controls style="display:none;"></audio>
+      </div>
+
+    </div>
+  </main>
+
+</div>
+
+<!-- Toast 容器 -->
+<div class="toast-container" id="toast-container"></div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
