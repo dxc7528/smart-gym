@@ -241,6 +241,13 @@ main {
 .tempo-inputs input { width: 44px; text-align: center; padding: 8px 4px; }
 .tempo-sep { color: var(--text-muted); font-size: 0.9rem; }
 
+/* ---------- 操作面板区 (音频 & 报告) ---------- */
+.action-panels {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
 /* ---------- 音频播放区 ---------- */
 .audio-panel {
   background: var(--bg-surface);
@@ -317,6 +324,112 @@ audio::-webkit-media-controls-panel { background: var(--bg-card); }
 .loading .btn-icon { display: none; }
 
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---------- Modal 弹窗 ---------- */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.modal {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  width: 90%;
+  max-width: 640px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow);
+  animation: slideUp 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+}
+@keyframes slideUp { from { transform: translateY(40px) scale(0.95); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+
+.modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.modal-header h2 { font-size: 1.15rem; font-weight: 600; }
+.btn-close {
+  background: transparent; border: none; color: var(--text-muted); font-size: 1.2rem; cursor: pointer; padding: 4px;
+}
+.btn-close:hover { color: var(--text-primary); }
+
+.modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+.modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+/* 报告打分项 */
+.report-ex-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.report-ex-header {
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--accent);
+}
+.report-score-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.score-opt {
+  flex: 1;
+  min-width: 140px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.score-opt:hover { border-color: rgba(255,255,255,0.2); color: var(--text-primary); }
+.score-opt.selected { background: var(--accent-glow); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+.score-opt input[type="radio"] { display: none; }
+
+.report-notes { margin-top: 20px; }
+textarea {
+  width: 100%;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  padding: 12px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  resize: vertical;
+  margin-top: 6px;
+  outline: none;
+}
+textarea:focus { border-color: var(--accent); }
 
 /* ---------- 消息提示 (Toast) ---------- */
 .toast-container {

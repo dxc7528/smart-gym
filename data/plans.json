@@ -4,10 +4,11 @@
     "name": "Day 1 - 上肢推力与核心",
     "exercises": [
       {
-        "name": "手把俯卧撑",
+        "name": "双杠臂屈伸",
         "sets": 3,
-        "reps": 12,
-        "rest": 60,
+        "reps": 8,
+        "rest": 90,
+        "transition_rest": 120,
         "tempo": [
           1,
           1,
@@ -15,10 +16,11 @@
         ]
       },
       {
-        "name": "双杠臂屈伸",
+        "name": "手把俯卧撑",
         "sets": 3,
-        "reps": 8,
-        "rest": 90,
+        "reps": 12,
+        "rest": 60,
+        "transition_rest": 120,
         "tempo": [
           1,
           1,
@@ -30,6 +32,7 @@
         "sets": 3,
         "reps": 20,
         "rest": 45,
+        "transition_rest": 90,
         "tempo": [
           1,
           1,
@@ -41,6 +44,7 @@
         "sets": 3,
         "reps": 12,
         "rest": 60,
+        "transition_rest": 90,
         "tempo": [
           1,
           1,

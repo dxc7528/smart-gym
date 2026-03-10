@@ -84,18 +84,32 @@
         </button>
       </div>
 
-      <!-- 音频区 -->
-      <div class="audio-panel" id="audio-panel">
-        <div class="audio-info">
-          <h3>🎵 训练语音音频</h3>
-          <p id="audio-desc">点击生成后，可在页面内直接播放完整训练引导音频</p>
+      <!-- 操作面板（音频与报告） -->
+      <div class="action-panels">
+        <!-- 音频区 -->
+        <div class="audio-panel" id="audio-panel">
+          <div class="audio-info">
+            <h3>🎵 训练语音音频</h3>
+            <p id="audio-desc">点击生成后，可在页面内直接播放</p>
+          </div>
+          <button class="btn btn-ghost" id="btn-gen-audio">
+            <span class="btn-icon">⚡</span>
+            <span class="spinner"></span>
+            生成音频
+          </button>
+          <audio id="audio-player" controls style="display:none;"></audio>
         </div>
-        <button class="btn btn-ghost" id="btn-gen-audio">
-          <span class="btn-icon">⚡</span>
-          <span class="spinner"></span>
-          生成音频
-        </button>
-        <audio id="audio-player" controls style="display:none;"></audio>
+
+        <!-- 总结报告区 -->
+        <div class="report-panel">
+          <div class="audio-info">
+            <h3>📝 训练总结报告</h3>
+            <p>训练完成后，给动作打分并记录难点，生成复盘 MD 报告。</p>
+          </div>
+          <button class="btn btn-secondary" id="btn-open-report">
+            撰写报告…
+          </button>
+        </div>
       </div>
 
     </div>
@@ -105,6 +119,35 @@
 
 <!-- Toast 容器 -->
 <div class="toast-container" id="toast-container"></div>
+
+<!-- 报告 Modal -->
+<div class="modal-overlay" id="report-modal" style="display:none;">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>训练复盘报告</h2>
+      <button class="btn-close" id="btn-close-report">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="report-exercise-list">
+        <!-- JS 动态渲染打分列表 -->
+      </div>
+      <div class="report-notes">
+        <label>总体备注 / 感受</label>
+        <textarea id="report-notes" rows="3" placeholder="写下今天的训练感受…"></textarea>
+      </div>
+      <div id="report-result-area" style="display:none; margin-top: 16px;">
+        <label>报告已生成并在本地保存。Markdown 内容预览：</label>
+        <textarea id="report-md-preview" rows="8" readonly style="font-family: monospace; font-size: 0.8rem;"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="btn-cancel-report">取消</button>
+      <button class="btn btn-primary" id="btn-submit-report">
+        <span class="spinner"></span> 提交并生成
+      </button>
+    </div>
+  </div>
+</div>
 
 <script src="/static/app.js"></script>
 </body>

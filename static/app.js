@@ -21,6 +21,17 @@ const btnAddExercise  = document.getElementById('btn-add-exercise');
 const btnGenAudio     = document.getElementById('btn-gen-audio');
 const btnNewPlan      = document.getElementById('btn-new-plan');
 
+// 报告 Modal 元素
+const btnOpenReport   = document.getElementById('btn-open-report');
+const reportModal     = document.getElementById('report-modal');
+const btnCloseReport  = document.getElementById('btn-close-report');
+const btnCancelReport = document.getElementById('btn-cancel-report');
+const btnSubmitReport = document.getElementById('btn-submit-report');
+const reportExList    = document.getElementById('report-exercise-list');
+const reportNotes     = document.getElementById('report-notes');
+const reportResArea   = document.getElementById('report-result-area');
+const reportMdPreview = document.getElementById('report-md-preview');
+
 // ========== Toast 提示 ==========
 function showToast(msg, type = 'success') {
   const container = document.getElementById('toast-container');
@@ -92,6 +103,7 @@ function getCardValues(card) {
     sets:  parseInt(card.querySelector('.ex-sets').value)  || 3,
     reps:  parseInt(card.querySelector('.ex-reps').value)  || 10,
     rest:  parseInt(card.querySelector('.ex-rest').value)  || 60,
+    transition_rest: parseInt(card.querySelector('.ex-trans-rest').value) || 120,
     tempo: [
       parseFloat(card.querySelector('.ex-t0').value) || 2,
       parseFloat(card.querySelector('.ex-t1').value) || 0,
@@ -107,8 +119,11 @@ function addExerciseCard(ex = null, idx = null) {
   const sets   = ex?.sets  ?? 3;
   const reps   = ex?.reps  ?? 10;
   const rest   = ex?.rest  ?? 60;
-  const tempo  = ex?.tempo ?? [2, 0, 2];
+  const trans_rest = ex?.transition_rest ?? 120;
+  const tempo  = ex?.tempo ?? [1, 1, 3];
   const label  = idx !== null ? `动作 ${idx + 1}` : '新动作';
+
+  card.setAttribute('draggable', 'true');
 
   card.innerHTML = `
     <div class="exercise-fields">
@@ -125,10 +140,14 @@ function addExerciseCard(ex = null, idx = null) {
         <input class="ex-reps" type="number" min="1" max="200" value="${reps}" />
       </div>
       <div class="field-group">
-        <label>休息 (秒)</label>
+        <label>组间休息 (秒)</label>
         <input class="ex-rest" type="number" min="0" max="600" value="${rest}" />
       </div>
       <div class="field-group">
+        <label>过渡休息 (秒)</label>
+        <input class="ex-trans-rest" type="number" min="0" max="600" value="${trans_rest}" title="完成此动作后，切换到下一个动作前的休息时间" />
+      </div>
+      <div class="field-group" style="grid-column: span 2;">
         <label>节奏 (发力-停顿-复原)</label>
         <div class="tempo-inputs">
           <input class="ex-t0" type="number" min="0" max="10" step="0.5" value="${tempo[0]}" />
@@ -139,7 +158,8 @@ function addExerciseCard(ex = null, idx = null) {
         </div>
       </div>
     </div>
-    <div class="exercise-actions">
+    <div class="exercise-actions" style="cursor: grab;" title="拖拽排序">
+      <span style="font-size:1.2rem;opacity:0.5;margin-right:12px;">☰</span>
       <button class="btn btn-danger btn-sm btn-rm-ex" title="删除此动作">✕</button>
     </div>
   `;
@@ -150,6 +170,33 @@ function addExerciseCard(ex = null, idx = null) {
     card.style.transform = 'translateY(-8px)';
     card.style.transition = '0.18s ease';
     setTimeout(() => { card.remove(); updateExerciseCount(); }, 180);
+  });
+
+  // 拖拽排序逻辑
+  card.addEventListener('dragstart', (e) => {
+    e.dataTransfer.effectAllowed = 'move';
+    card.classList.add('dragging');
+    setTimeout(() => card.style.opacity = '0.5', 0);
+  });
+
+  card.addEventListener('dragend', () => {
+    card.classList.remove('dragging');
+    card.style.opacity = '1';
+  });
+
+  card.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    const draggingEl = exerciseListEl.querySelector('.dragging');
+    if (!draggingEl || draggingEl === card) return;
+
+    const rect = card.getBoundingClientRect();
+    const offset = e.clientY - rect.top - (rect.height / 2);
+    if (offset < 0) {
+      card.before(draggingEl);
+    } else {
+      card.after(draggingEl);
+    }
   });
 
   exerciseListEl.appendChild(card);
@@ -291,12 +338,102 @@ async function init() {
   }
 }
 
+// ========== 报告逻辑 ==========
+function openReportModal() {
+  if (!currentPlanId) {
+    showToast('请先保存或选择一个计划', 'error');
+    return;
+  }
+  const plan = plans.find(p => p.id === currentPlanId);
+  if (!plan || !plan.exercises || plan.exercises.length === 0) {
+    showToast('当前计划没有动作', 'error');
+    return;
+  }
+
+  // 渲染打分列表
+  reportExList.innerHTML = '';
+  plan.exercises.forEach((ex, idx) => {
+    const item = document.createElement('div');
+    item.className = 'report-ex-item';
+    item.dataset.idx = idx;
+    item.dataset.name = ex.name;
+    item.innerHTML = `
+      <div class="report-ex-header">${idx + 1}. ${ex.name}</div>
+      <div class="report-score-options">
+        <label class="score-opt selected"><input type="radio" name="score-${idx}" value="3" checked>3: 能够完成每组</label>
+        <label class="score-opt"><input type="radio" name="score-${idx}" value="2">2: 只能完成80%</label>
+        <label class="score-opt"><input type="radio" name="score-${idx}" value="1">1: 只能完成50%</label>
+        <label class="score-opt"><input type="radio" name="score-${idx}" value="0">0: 完全不能完成</label>
+      </div>
+      <div>
+        <input type="text" class="ex-difficulty" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--bg-surface); color:var(--text-primary);" placeholder="可选：填写本动作难点或感受...">
+      </div>
+    `;
+
+    // 绑定单选按钮高亮逻辑
+    const labels = item.querySelectorAll('.score-opt');
+    labels.forEach(lbl => {
+      lbl.querySelector('input').addEventListener('change', (e) => {
+        labels.forEach(l => l.classList.remove('selected'));
+        if (e.target.checked) lbl.classList.add('selected');
+      });
+    });
+
+    reportExList.appendChild(item);
+  });
+
+  reportNotes.value = '';
+  reportResArea.style.display = 'none';
+  btnSubmitReport.style.display = '';
+  reportModal.style.display = 'flex';
+}
+
+function closeReportModal() {
+  reportModal.style.display = 'none';
+}
+
+async function submitReport() {
+  const exItems = reportExList.querySelectorAll('.report-ex-item');
+  const exercises = [];
+  exItems.forEach(item => {
+    const name = item.dataset.name;
+    const score = parseInt(item.querySelector('input[type="radio"]:checked').value);
+    const difficulty = item.querySelector('.ex-difficulty').value.trim();
+    exercises.push({ name, score, difficulty });
+  });
+
+  const notes = reportNotes.value.trim();
+  const payload = { exercises, notes };
+
+  setLoading(btnSubmitReport, true);
+  try {
+    const res = await api('POST', `/api/plans/${currentPlanId}/report`, payload);
+    showToast('报告已生成 ✅');
+    reportMdPreview.value = res.md_content;
+    reportResArea.style.display = 'block';
+    btnSubmitReport.style.display = 'none'; // 隐藏提交按钮，只看结果
+  } catch (e) {
+    showToast(e.message, 'error');
+  } finally {
+    setLoading(btnSubmitReport, false);
+  }
+}
+
 // ========== 事件绑定 ==========
 btnNewPlan.addEventListener('click', newPlan);
 btnSavePlan.addEventListener('click', savePlan);
 btnDeletePlan.addEventListener('click', deletePlan);
 btnAddExercise.addEventListener('click', () => addExerciseCard());
 btnGenAudio.addEventListener('click', generateAudio);
+btnOpenReport.addEventListener('click', openReportModal);
+btnCloseReport.addEventListener('click', closeReportModal);
+btnCancelReport.addEventListener('click', closeReportModal);
+
+// 若点击遮罩层也关闭
+reportModal.addEventListener('click', (e) => {
+  if (e.target === reportModal) closeReportModal();
+});
+btnSubmitReport.addEventListener('click', submitReport);
 
 // 启动
 init();

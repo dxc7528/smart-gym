@@ -107,6 +107,8 @@ def build_workout_audio(plan_name, exercises):
         rest = ex['rest']
         tempo = ex['tempo']  # [向心/发力, 停顿, 离心/复原]
         
+        trans_rest = ex.get('transition_rest', rest)
+        
         # 动作介绍
         workout_audio += get_speech_audio(f"下一个动作：{name}，共 {sets} 组，每组 {reps} 次。") + get_silence(2)
         
@@ -124,19 +126,21 @@ def build_workout_audio(plan_name, exercises):
             is_last_exercise = (ex_idx == len(exercises) - 1)
             
             if not (is_last_set and is_last_exercise):
+                current_rest = trans_rest if is_last_set else rest
+
                 if is_last_set:
-                    workout_audio += get_speech_audio(f"动作完成。休息 {rest} 秒，准备切换动作。")
+                    workout_audio += get_speech_audio(f"动作完成。休息 {current_rest} 秒，准备切换动作。")
                 else:
-                    workout_audio += get_speech_audio(f"休息 {rest} 秒。")
+                    workout_audio += get_speech_audio(f"休息 {current_rest} 秒。")
                 
                 # 休息时间，最后10秒加入滴答声
-                if rest > 10:
-                    workout_audio += get_silence(rest - 10)
+                if current_rest > 10:
+                    workout_audio += get_silence(current_rest - 10)
                     for _ in range(3):
                         workout_audio += get_beep(freq=1000, duration=100) + get_silence(0.9)
                     workout_audio += get_silence(7) # 留足最后几秒准备
                 else:
-                    workout_audio += get_silence(rest)
+                    workout_audio += get_silence(current_rest)
     
     workout_audio += get_speech_audio("训练结束，干得漂亮。记得拉伸。")
     
@@ -159,6 +163,8 @@ def build_workout_audio_to_buffer(plan_name: str, exercises: list) -> bytes:
         rest = ex['rest']
         tempo = ex['tempo']  # [向心/发力, 停顿, 离心/复原]
 
+        trans_rest = ex.get('transition_rest', rest)
+
         workout_audio += get_speech_audio(f"下一个动作：{name}，共 {sets} 组，每组 {reps} 次。") + get_silence(2)
 
         for s in range(sets):
@@ -171,18 +177,20 @@ def build_workout_audio_to_buffer(plan_name: str, exercises: list) -> bytes:
             is_last_exercise = (ex_idx == len(exercises) - 1)
 
             if not (is_last_set and is_last_exercise):
-                if is_last_set:
-                    workout_audio += get_speech_audio(f"动作完成。休息 {rest} 秒，准备切换动作。")
-                else:
-                    workout_audio += get_speech_audio(f"休息 {rest} 秒。")
+                current_rest = trans_rest if is_last_set else rest
 
-                if rest > 10:
-                    workout_audio += get_silence(rest - 10)
+                if is_last_set:
+                    workout_audio += get_speech_audio(f"动作完成。休息 {current_rest} 秒，准备切换动作。")
+                else:
+                    workout_audio += get_speech_audio(f"休息 {current_rest} 秒。")
+
+                if current_rest > 10:
+                    workout_audio += get_silence(current_rest - 10)
                     for _ in range(3):
                         workout_audio += get_beep(freq=1000, duration=100) + get_silence(0.9)
                     workout_audio += get_silence(7)
                 else:
-                    workout_audio += get_silence(rest)
+                    workout_audio += get_silence(current_rest)
 
     workout_audio += get_speech_audio("训练结束，干得漂亮。记得拉伸。")
 

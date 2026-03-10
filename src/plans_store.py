@@ -80,10 +80,10 @@ DEFAULT_PLANS = [
     {
         "name": "Day 1 - 上肢推力与核心",
         "exercises": [
-            {"name": "手把俯卧撑", "sets": 3, "reps": 12, "rest": 60, "tempo": [2, 1, 2]},
-            {"name": "双杠臂屈伸", "sets": 3, "reps": 8, "rest": 90, "tempo": [2, 1, 3]},
-            {"name": "侧平举", "sets": 3, "reps": 20, "rest": 45, "tempo": [1, 1, 3]},
-            {"name": "悬垂举腿", "sets": 3, "reps": 12, "rest": 60, "tempo": [1, 1, 2]},
+            {"name": "手把俯卧撑", "sets": 3, "reps": 12, "rest": 60, "transition_rest": 120, "tempo": [1, 1, 3]},
+            {"name": "双杠臂屈伸", "sets": 3, "reps": 8, "rest": 90, "transition_rest": 120, "tempo": [1, 1, 3]},
+            {"name": "侧平举", "sets": 3, "reps": 20, "rest": 45, "transition_rest": 90, "tempo": [1, 1, 3]},
+            {"name": "悬垂举腿", "sets": 3, "reps": 12, "rest": 60, "transition_rest": 90, "tempo": [1, 1, 3]},
         ],
     }
 ]

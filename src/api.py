@@ -104,6 +104,28 @@ def generate_audio(plan_id):
         return jsonify({"error": f"音频生成失败：{str(e)}"}), 500
 
 
+# ---------- 训练报告 ----------
+
+
+@app.route("/api/plans/<plan_id>/report", methods=["POST"])
+def submit_report(plan_id):
+    plan = get_plan(plan_id)
+    if plan is None:
+        return jsonify({"error": "计划不存在"}), 404
+
+    data = request.get_json(force=True)
+    exercises = data.get("exercises", [])
+    notes = data.get("notes", "")
+
+    try:
+        from reports_store import save_report
+
+        report = save_report(plan_id, plan["name"], exercises, notes)
+        return jsonify(report), 201
+    except Exception as e:
+        return jsonify({"error": f"保存报告失败：{str(e)}"}), 500
+
+
 # ---------- 启动 ----------
 
 
