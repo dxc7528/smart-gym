@@ -1,10 +1,11 @@
 import React, { useContext, useEffect } from 'react';
 import { AppContext } from '../App.jsx';
 import useWorkoutPlayer from '../hooks/useWorkoutPlayer.js';
+import { t } from '../utils/i18n.js';
 
 export default function WorkoutRunner({ planName, exercises, onClose }) {
-  const { tts } = useContext(AppContext);
-  const player = useWorkoutPlayer(tts); // tts = { isReady, synthesize, cancelAll, ... }
+  const { tts, lang } = useContext(AppContext);
+  const player = useWorkoutPlayer({ ...tts, audioLang: lang, lang });
 
   // 仅在组件挂载时启动一次，cleanup 在卸载时停止
   useEffect(() => {
@@ -36,23 +37,23 @@ export default function WorkoutRunner({ planName, exercises, onClose }) {
           <div className="workout-progress-fill" style={{ width: `${progressPct}%` }} />
         </div>
         <div className="workout-progress-text">
-          {player.playerState === 'preparing' && '正在预生成音频...'}
-          {player.playerState === 'playing' && `已合成 ${player.processedCount}/${player.totalCount} 段语音`}
-          {player.playerState === 'paused' && '已暂停'}
-          {player.playerState === 'complete' && '训练完成！'}
-          {player.playerState === 'idle' && '已停止'}
+          {player.playerState === 'preparing' && t(lang, 'preparing')}
+          {player.playerState === 'playing' && t(lang, 'audioProgress', { processed: player.processedCount, total: player.totalCount })}
+          {player.playerState === 'paused' && t(lang, 'paused')}
+          {player.playerState === 'complete' && t(lang, 'complete')}
+          {player.playerState === 'idle' && t(lang, 'stopped')}
         </div>
       </div>
 
       {/* 当前动作详情 */}
       {player.currentPhase?.exerciseName && (
         <div style={{ textAlign: 'center', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-          动作 {(player.currentPhase.exerciseIndex ?? 0) + 1}/{player.currentPhase.totalExercises || exercises.length}
+          {t(lang, 'exerciseStatus', { current: (player.currentPhase.exerciseIndex ?? 0) + 1, total: player.currentPhase.totalExercises || exercises.length })}
           {player.currentPhase.setIndex != null && (
-            <span> · 第 {player.currentPhase.setIndex + 1}/{player.currentPhase.totalSets} 组</span>
+            <span> · {t(lang, 'setStatus', { current: player.currentPhase.setIndex + 1, total: player.currentPhase.totalSets })}</span>
           )}
           {player.currentPhase.repIndex != null && (
-            <span> · 第 {player.currentPhase.repIndex + 1}/{player.currentPhase.totalReps} 次</span>
+            <span> · {t(lang, 'repStatus', { current: player.currentPhase.repIndex + 1, total: player.currentPhase.totalReps })}</span>
           )}
         </div>
       )}
@@ -61,22 +62,22 @@ export default function WorkoutRunner({ planName, exercises, onClose }) {
       <div className="workout-controls">
         {player.playerState === 'playing' && (
           <button className="btn btn-secondary" onClick={player.pause}>
-            ⏸ 暂停
+            {t(lang, 'btnPause')}
           </button>
         )}
         {player.playerState === 'paused' && (
           <button className="btn btn-primary" onClick={player.resume}>
-            ▶ 继续
+            {t(lang, 'btnResume')}
           </button>
         )}
         {(player.playerState === 'playing' || player.playerState === 'paused' || player.playerState === 'preparing') && (
           <button className="btn btn-danger" onClick={() => { player.stop(); onClose(); }}>
-            ⏹ 停止
+            {t(lang, 'btnStop')}
           </button>
         )}
         {(player.playerState === 'complete' || player.playerState === 'idle') && (
           <button className="btn btn-ghost" onClick={onClose}>
-            关闭
+            {t(lang, 'close')}
           </button>
         )}
       </div>
@@ -84,17 +85,17 @@ export default function WorkoutRunner({ planName, exercises, onClose }) {
       {/* 跳转控制 */}
       {(player.playerState === 'playing' || player.playerState === 'paused') && (
         <div className="workout-seek-controls" style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap', marginTop: '1rem' }}>
-          <button className="btn btn-secondary btn-sm" onClick={() => player.seekTo('exercise', 'prev')} title="回到上一个动作，或当前动作的开头">
-            ⏮ 上一动作
+          <button className="btn btn-secondary btn-sm" onClick={() => player.seekTo('exercise', 'prev')}>
+            {t(lang, 'seekPrevEx')}
           </button>
-          <button className="btn btn-secondary btn-sm" onClick={() => player.seekTo('set', 'prev')} title="回到上一组，或当前此组的开头">
-            ⏪ 上一组
+          <button className="btn btn-secondary btn-sm" onClick={() => player.seekTo('set', 'prev')}>
+            {t(lang, 'seekPrevSet')}
           </button>
-          <button className="btn btn-secondary btn-sm" onClick={() => player.seekTo('set', 'next')} title="跳过当前组，进入下一组">
-            下一组 ⏩
+          <button className="btn btn-secondary btn-sm" onClick={() => player.seekTo('set', 'next')}>
+            {t(lang, 'seekNextSet')}
           </button>
-          <button className="btn btn-secondary btn-sm" onClick={() => player.seekTo('exercise', 'next')} title="跳过当前动作，进入下一个动作">
-            下一动作 ⏭
+          <button className="btn btn-secondary btn-sm" onClick={() => player.seekTo('exercise', 'next')}>
+            {t(lang, 'seekNextEx')}
           </button>
         </div>
       )}

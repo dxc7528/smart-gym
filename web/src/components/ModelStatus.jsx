@@ -1,16 +1,13 @@
 import React from 'react';
+import { t } from '../utils/i18n.js';
 
-export default function ModelStatus({ isReady, preferredVoice }) {
+export default function ModelStatus({ isReady, lang }) {
   let dotClass = 'idle';
-  let label = '未支持原生语音';
+  let label = t(lang, 'voiceNotSupported');
 
   if (isReady) {
     dotClass = 'ready';
-    if (preferredVoice) {
-      label = `语音就绪 (${preferredVoice.name})`;
-    } else {
-      label = '语音就绪 (默认中文)';
-    }
+    label = t(lang, 'voiceReady');
   } else {
     dotClass = 'error';
   }

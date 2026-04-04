@@ -1,7 +1,10 @@
-import React, { useRef } from 'react';
+import React, { useRef, useContext } from 'react';
+import { AppContext } from '../App.jsx';
+import { t } from '../utils/i18n.js';
 
 export default function ExerciseCard({ exercise, index, onChange, onRemove, onDragStart, onDragOver, onDragEnd }) {
   const cardRef = useRef(null);
+  const { lang } = useContext(AppContext);
 
   const handleChange = (field, value) => {
     onChange(index, { ...exercise, [field]: value });
@@ -35,16 +38,16 @@ export default function ExerciseCard({ exercise, index, onChange, onRemove, onDr
     >
       <div className="exercise-fields">
         <div className="field-group">
-          <label>动作名称</label>
+          <label>{t(lang, 'exerciseNameLabel')}</label>
           <input
             type="text"
-            placeholder="例：深蹲、卧推…"
+            placeholder={t(lang, 'planNameHint')}
             value={exercise.name}
             onChange={e => handleChange('name', e.target.value)}
           />
         </div>
         <div className="field-group">
-          <label>组数</label>
+          <label>{t(lang, 'sets')}</label>
           <input
             type="number"
             min="1"
@@ -54,7 +57,7 @@ export default function ExerciseCard({ exercise, index, onChange, onRemove, onDr
           />
         </div>
         <div className="field-group">
-          <label>每组次数</label>
+          <label>{t(lang, 'reps')}</label>
           <input
             type="number"
             min="1"
@@ -64,7 +67,7 @@ export default function ExerciseCard({ exercise, index, onChange, onRemove, onDr
           />
         </div>
         <div className="field-group">
-          <label>组间休息 (秒)</label>
+          <label>{t(lang, 'rest')}</label>
           <input
             type="number"
             min="0"
@@ -74,18 +77,17 @@ export default function ExerciseCard({ exercise, index, onChange, onRemove, onDr
           />
         </div>
         <div className="field-group">
-          <label>过渡休息 (秒)</label>
+          <label>{t(lang, 'transitionRest')}</label>
           <input
             type="number"
             min="0"
             max="600"
             value={exercise.transition_rest}
             onChange={e => handleChange('transition_rest', parseInt(e.target.value) || 0)}
-            title="完成此动作后，切换到下一个动作前的休息时间"
           />
         </div>
         <div className="field-group" style={{ gridColumn: 'span 2' }}>
-          <label>节奏 (发力-停顿-复原)</label>
+          <label>{t(lang, 'tempoLabel')}</label>
           <div className="tempo-inputs">
             <input
               type="number"

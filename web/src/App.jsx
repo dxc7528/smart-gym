@@ -7,6 +7,7 @@ import PlanEditor from './components/PlanEditor.jsx';
 import HowToPage from './components/HowToPage.jsx';
 import Toast from './components/Toast.jsx';
 import { getAllPlans, seedDefaultPlans } from './store/plansStore.js';
+import { t } from './utils/i18n.js';
 
 // 全局上下文
 export const AppContext = createContext(null);
@@ -22,6 +23,9 @@ export default function App() {
     const all = getAllPlans();
     return all.length > 0 ? all[0].id : null;
   });
+
+  // 应用语言状态：en, zh, ja
+  const [lang, setLang] = useState('en');
 
   // 依赖原生 Web Speech
   const tts = useWebSpeech();
@@ -52,6 +56,8 @@ export default function App() {
     tts,
     page,
     setPage,
+    lang,
+    setLang,
   };
 
   return (
@@ -67,8 +73,8 @@ export default function App() {
             ) : (
               <div className="empty-state">
                 <div className="empty-icon">📋</div>
-                <h2>还没有训练计划</h2>
-                <p>点击左侧「新建计划」开始吧</p>
+                <h2>{t(lang, 'noPlanTitle')}</h2>
+                <p>{t(lang, 'noPlanDesc')}</p>
               </div>
             )}
           </main>

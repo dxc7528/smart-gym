@@ -4,6 +4,7 @@ import ExerciseCard from './ExerciseCard.jsx';
 import AudioPanel from './AudioPanel.jsx';
 import ReportModal from './ReportModal.jsx';
 import { getPlan, createPlan, updatePlan, deletePlan as deletePlanStore } from '../store/plansStore.js';
+import { t } from '../utils/i18n.js';
 
 const DEFAULT_EXERCISE = {
   name: '',
@@ -15,7 +16,7 @@ const DEFAULT_EXERCISE = {
 };
 
 export default function PlanEditor() {
-  const { currentPlanId, selectPlan, refreshPlans, plans, setCurrentPlanId, setPage } = useContext(AppContext);
+  const { currentPlanId, selectPlan, refreshPlans, plans, setCurrentPlanId, setPage, lang } = useContext(AppContext);
   const showToast = useContext(ToastContext);
 
   const existingPlan = currentPlanId ? getPlan(currentPlanId) : null;
@@ -62,13 +63,13 @@ export default function PlanEditor() {
       let saved;
       if (currentPlanId) {
         saved = updatePlan(currentPlanId, trimmedName, exercises);
-        if (!saved) throw new Error('计划不存在');
+        if (!saved) throw new Error('Plan does not exist');
       } else {
         saved = createPlan(trimmedName, exercises);
       }
       refreshPlans();
       selectPlan(saved.id);
-      showToast('计划已保存 ✨');
+      showToast(t(lang, 'planSaveSuccess'));
     } catch (e) {
       showToast(e.message, 'error');
     } finally {
@@ -78,7 +79,7 @@ export default function PlanEditor() {
 
   const handleDelete = () => {
     if (!currentPlanId) return;
-    if (!confirm(`确认删除「${existingPlan?.name}」？此操作不可撤销。`)) return;
+    if (!confirm(t(lang, 'planDeleteConfirm', { name: existingPlan?.name }))) return;
     deletePlanStore(currentPlanId);
     refreshPlans();
     const remaining = plans.filter(p => p.id !== currentPlanId);
@@ -88,7 +89,7 @@ export default function PlanEditor() {
       setCurrentPlanId(null);
       setPage('plans');
     }
-    showToast('已删除');
+    showToast(t(lang, 'planDeleted'));
   };
 
   return (
@@ -98,21 +99,21 @@ export default function PlanEditor() {
         <input
           type="text"
           className="plan-title-input"
-          placeholder="输入训练计划名称…"
+          placeholder={t(lang, 'planNamePlaceholder')}
           maxLength={60}
           value={name}
           onChange={e => setName(e.target.value)}
         />
         <div className="btn-group">
           {currentPlanId && (
-            <button className="btn btn-danger btn-sm" onClick={handleDelete} title="删除此计划">
-              🗑 删除
+            <button className="btn btn-danger btn-sm" onClick={handleDelete} title="Delete this plan">
+              {t(lang, 'deletePlan')}
             </button>
           )}
           <button className={`btn btn-primary${saving ? ' loading' : ''}`} onClick={handleSave} disabled={saving}>
-            <span className="btn-icon">💾</span>
+            <span className="btn-icon"></span>
             <span className="spinner"></span>
-            保存
+            {t(lang, 'savePlan')}
           </button>
         </div>
       </div>
@@ -120,8 +121,8 @@ export default function PlanEditor() {
       {/* 动作列表 */}
       <div className="exercises-container">
         <div className="section-header">
-          <span className="section-title">动作列表</span>
-          <span className="badge badge-success">{exercises.length} 个动作</span>
+          <span className="section-title">{t(lang, 'exerciseList')}</span>
+          <span className="badge badge-success">{t(lang, 'exerciseCount', { count: exercises.length })}</span>
         </div>
         {exercises.map((ex, idx) => (
           <ExerciseCard
@@ -136,7 +137,7 @@ export default function PlanEditor() {
           />
         ))}
         <button className="btn btn-add" onClick={handleAddExercise}>
-          ＋ 添加动作
+          {t(lang, 'addExercise')}
         </button>
       </div>
 
@@ -147,11 +148,11 @@ export default function PlanEditor() {
           
           <div className="report-panel">
             <div className="audio-info">
-              <h3>📝 训练总结报告</h3>
-              <p>训练完成后，给动作打分并记录难点，生成复盘 MD 报告。</p>
+              <h3>{t(lang, 'reportTitle')}</h3>
+              <p>{t(lang, 'reportDesc')}</p>
             </div>
             <button className="btn btn-secondary" onClick={() => setShowReport(true)}>
-              撰写报告…
+              {t(lang, 'reportBtn')}
             </button>
           </div>
         </div>

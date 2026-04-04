@@ -1,11 +1,232 @@
 import React, { useContext } from 'react';
 import { AppContext } from '../App.jsx';
+import { t } from '../utils/i18n.js';
 
-export default function HowToPage() {
-  const { setPage } = useContext(AppContext);
-
+function HowToEN({ setPage }) {
   return (
-    <div className="how-to-main">
+    <>
+      <a className="back-link" href="#" onClick={e => { e.preventDefault(); setPage('plans'); }}>
+        ← Workout Plans
+      </a>
+
+      <h1>📖 Parameters Guide</h1>
+      <p className="page-desc">Understand each training parameter to scientifically design your workout rhythm.</p>
+
+      {/* Sets */}
+      <div className="param-section">
+        <div className="param-header">
+          <div className="param-icon">🔁</div>
+          <div>
+            <div className="param-title">Sets <code style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>sets</code></div>
+          </div>
+          <span className="param-tag">Integer</span>
+        </div>
+        <div className="param-card">
+          <p>The <strong>total number of sets</strong> to complete. Rest is required between sets.</p>
+          <p>Beginners usually start with <strong>3 sets</strong>; advanced lifters may go up to 4–5 sets.</p>
+          <div className="example-row">
+            <span className="ex-label">Example</span>
+            <span className="ex-val">3 Sets</span>
+            <span style={{ color: 'var(--text-muted)' }}>→ Complete a set, rest, and repeat 3 times in total.</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Reps */}
+      <div className="param-section">
+        <div className="param-header">
+          <div className="param-icon">💪</div>
+          <div>
+            <div className="param-title">Reps <code style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>reps</code></div>
+          </div>
+          <span className="param-tag">Integer</span>
+        </div>
+        <div className="param-card">
+          <p>The <strong>number of repetitions</strong> within each set. The rep range varies by goal:</p>
+          <p>
+            <strong>1–5 Reps</strong>: Maximum Strength&nbsp;
+            <strong>6–12 Reps</strong>: Hypertrophy (Muscle Gain)&nbsp;
+            <strong>15–30 Reps</strong>: Endurance / Toning
+          </p>
+          <div className="example-row">
+            <span className="ex-label">Example</span>
+            <span className="ex-val">12 Reps</span>
+            <span style={{ color: 'var(--text-muted)' }}>→ Perform 12 complete movements continuously per set.</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Rest */}
+      <div className="param-section">
+        <div className="param-header">
+          <div className="param-icon">⏱</div>
+          <div>
+            <div className="param-title">Rest <code style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>rest</code></div>
+          </div>
+          <span className="param-tag">Seconds</span>
+        </div>
+        <div className="param-card">
+          <p>The <strong>rest time in seconds</strong> between sets. Rest duration affects training outcomes:</p>
+          <p>
+            <strong>30–60s</strong>: Supersets / Conditioning&nbsp;
+            <strong>60–90s</strong>: Standard Hypertrophy&nbsp;
+            <strong>2–5 mins</strong>: Max Strength
+          </p>
+          <p>In the final 10 seconds, the audio will play a countdown to remind you to get ready.</p>
+          <div className="example-row">
+            <span className="ex-label">Example</span>
+            <span className="ex-val">90s</span>
+            <span style={{ color: 'var(--text-muted)' }}>→ Approximately 1.5 minutes of rest.</span>
+          </div>
+        </div>
+      </div>
+
+      <hr className="divider" />
+
+      {/* Tempo */}
+      <div className="param-section">
+        <div className="param-header">
+          <div className="param-icon">🎵</div>
+          <div>
+            <div className="param-title">Tempo <code style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>tempo</code></div>
+          </div>
+          <span className="param-tag">Three Numbers</span>
+        </div>
+        <div className="param-card">
+          <p>Tempo controls the <strong>time rhythm</strong> of each repetition, formatted as three numbers:</p>
+          <p style={{ textAlign: 'center', fontSize: '1.05rem', fontWeight: 700, letterSpacing: '0.1em', margin: '12px 0' }}>
+            <span style={{ color: 'var(--accent)' }}>Push</span>
+            <span style={{ color: 'var(--text-muted)' }}> — </span>
+            <span style={{ color: 'var(--warning)' }}>Hold</span>
+            <span style={{ color: 'var(--text-muted)' }}> — </span>
+            <span style={{ color: 'var(--blue)' }}>Down</span>
+          </p>
+
+          <p><strong style={{ color: 'var(--accent)' }}>① Push (Concentric)</strong>: Muscle shortens, overcoming resistance.<br />E.g., pushing up in a push-up, pulling up in a pull-up.</p>
+          <p><strong style={{ color: 'var(--warning)' }}>② Hold (Isometric)</strong>: Briefly pausing at the peak to enhance mind-muscle connection.<br />Enter <strong>0</strong> for no pause.</p>
+          <p><strong style={{ color: 'var(--blue)' }}>③ Down (Eccentric)</strong>: Muscle lengthening under resistance back to the starting position.<br />The eccentric phase is <strong>more important than the concentric phase</strong>—a slow negative produces greater muscle damage (→ more growth) and protects joints.</p>
+
+          <p style={{ marginTop: 16, fontSize: '0.8rem', color: 'var(--text-muted)' }}>Example: <strong>tempo = [2, 1, 3]</strong> (Triceps Dips):</p>
+          <div className="tempo-timeline">
+            <div className="tempo-phase phase-concentric">
+              <div className="phase-secs">2s</div>
+              <div className="phase-name">Push</div>
+            </div>
+            <div className="tempo-phase phase-isometric">
+              <div className="phase-secs">1s</div>
+              <div className="phase-name">Peak Hold</div>
+            </div>
+            <div className="tempo-phase phase-eccentric">
+              <div className="phase-secs">3s</div>
+              <div className="phase-name">Slow Negative</div>
+            </div>
+          </div>
+
+          <p style={{ marginTop: 16 }}>
+            Calculated audio prompts play at the start of each phase (<strong>"Push" / "Hold" / "Down"</strong>), along with a <strong>Tick</strong> sound every second during the eccentric phase. This allows your brain to focus entirely on muscle contraction, without needing to silently count seconds.
+          </p>
+
+          <div className="example-row" style={{ marginTop: 12 }}>
+            <span className="ex-label">Push-ups</span>
+            <span className="ex-val">[2, 1, 2]</span>
+            <span style={{ color: 'var(--text-muted)' }}>→ 2s Push · 1s Peak · 2s Down</span>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function HowToJA({ setPage }) {
+  return (
+    <>
+      <a className="back-link" href="#" onClick={e => { e.preventDefault(); setPage('plans'); }}>
+        ← プランに戻る
+      </a>
+
+      <h1>📖 パラメータの説明</h1>
+      <p className="page-desc">各トレーニングパラメータの意味を理解し、効果的なリズムを設計しましょう。</p>
+
+      {/* Sets */}
+      <div className="param-section">
+        <div className="param-header">
+          <div className="param-icon">🔁</div>
+          <div>
+            <div className="param-title">セット数 <code style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>sets</code></div>
+          </div>
+          <span className="param-tag">整数</span>
+        </div>
+        <div className="param-card">
+          <p>種目を実行する<strong>合計セット数</strong>です。セット間には休憩が必要です。</p>
+          <p>初心者は通常 <strong>3 セット</strong>から始めます。</p>
+        </div>
+      </div>
+
+      {/* Reps */}
+      <div className="param-section">
+        <div className="param-header">
+          <div className="param-icon">💪</div>
+          <div>
+            <div className="param-title">回数 <code style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>reps</code></div>
+          </div>
+          <span className="param-tag">整数</span>
+        </div>
+        <div className="param-card">
+          <p>1セット内で動作を反復する<strong>回数（レップ数）</strong>です。</p>
+          <p>
+            <strong>1–5 回</strong>: 最大筋力&nbsp;
+            <strong>6–12 回</strong>: 筋肥大&nbsp;
+            <strong>15–30 回</strong>: 筋持久力
+          </p>
+        </div>
+      </div>
+
+      {/* Rest */}
+      <div className="param-section">
+        <div className="param-header">
+          <div className="param-icon">⏱</div>
+          <div>
+            <div className="param-title">休憩 <code style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>rest</code></div>
+          </div>
+          <span className="param-tag">秒</span>
+        </div>
+        <div className="param-card">
+          <p>セット間の<strong>休憩時間（秒）</strong>です。最後の10秒間にはカウントダウン音声が流れます。</p>
+        </div>
+      </div>
+
+      <hr className="divider" />
+
+      {/* Tempo */}
+      <div className="param-section">
+        <div className="param-header">
+          <div className="param-icon">🎵</div>
+          <div>
+            <div className="param-title">テンポ <code style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>tempo</code></div>
+          </div>
+          <span className="param-tag">3つの数字</span>
+        </div>
+        <div className="param-card">
+          <p>テンポは反復時の<strong>時間的リズム</strong>を制御し、3つの数字で指定します：</p>
+          <p style={{ textAlign: 'center', fontSize: '1.05rem', fontWeight: 700, letterSpacing: '0.1em', margin: '12px 0' }}>
+            <span style={{ color: 'var(--accent)' }}>上げる</span>
+            <span style={{ color: 'var(--text-muted)' }}> — </span>
+            <span style={{ color: 'var(--warning)' }}>キープ</span>
+            <span style={{ color: 'var(--text-muted)' }}> — </span>
+            <span style={{ color: 'var(--blue)' }}>下ろす</span>
+          </p>
+          <p><strong style={{ color: 'var(--accent)' }}>① 上げる（短縮性）</strong>：筋肉が縮む段階。</p>
+          <p><strong style={{ color: 'var(--warning)' }}>② キープ（等尺性）</strong>：ピーク位置での一時停止。<strong>0</strong>でそのまま次へ。</p>
+          <p><strong style={{ color: 'var(--blue)' }}>③ 下ろす（伸張性）</strong>：筋肉が伸びる段階。ここでは<strong>ゆっくり下ろす</strong>ことが重要です。</p>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function HowToZH({ setPage }) {
+  return (
+    <>
       <a className="back-link" href="#" onClick={e => { e.preventDefault(); setPage('plans'); }}>
         ← 返回训练计划
       </a>
@@ -145,6 +366,16 @@ export default function HowToPage() {
           </div>
         </div>
       </div>
+    </>
+  );
+}
+
+export default function HowToPage() {
+  const { setPage, lang } = useContext(AppContext);
+
+  return (
+    <div className="how-to-main">
+      {lang === 'en' ? <HowToEN setPage={setPage} /> : lang === 'ja' ? <HowToJA setPage={setPage} /> : <HowToZH setPage={setPage} />}
     </div>
   );
 }

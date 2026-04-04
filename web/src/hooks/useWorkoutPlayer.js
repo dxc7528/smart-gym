@@ -3,13 +3,13 @@
  * 仅依赖原生的 Web Speech API 和 Web Audio API (音效)
  */
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import audioEngine from '../audio/audioEngine.js';
 import { buildWorkoutSequence, estimateWorkoutDuration } from '../audio/workoutPlayer.js';
 
 const SAMPLE_RATE = 24000;
 
-export default function useWorkoutPlayer({ isReady, synthesize, cancelAll }) {
+export default function useWorkoutPlayer({ isReady, synthesize, cancelAll, audioLang = 'zh' }) {
   const [playerState, setPlayerState] = useState('idle'); // idle | preparing | playing | paused | complete
   const [currentPhase, setCurrentPhase] = useState(null);
   const [totalDuration, setTotalDuration] = useState(0);
@@ -22,6 +22,11 @@ export default function useWorkoutPlayer({ isReady, synthesize, cancelAll }) {
   const ttsProcessedRef = useRef(0);
   const abortRef = useRef(false);
   const workoutSeqRef = useRef(0);
+  const audioLangRef = useRef(audioLang);
+
+  useEffect(() => {
+    audioLangRef.current = audioLang;
+  }, [audioLang]);
 
   const playFromIndex = useCallback(async (startIndex) => {
     const seq = ++workoutSeqRef.current;
@@ -54,7 +59,7 @@ export default function useWorkoutPlayer({ isReady, synthesize, cancelAll }) {
           break;
 
         case 'tts': {
-          await synthesize(item.text);
+          await synthesize(item.text, audioLangRef.current);
           if (workoutSeqRef.current === seq) {
             ttsProcessedRef.current++;
             setProcessedCount(ttsProcessedRef.current);
@@ -63,7 +68,7 @@ export default function useWorkoutPlayer({ isReady, synthesize, cancelAll }) {
         }
 
         case 'overlay': {
-          const ttsPromise = synthesize(item.text).catch(() => {});
+          const ttsPromise = synthesize(item.text, audioLangRef.current).catch(() => {});
           await audioEngine.playBuffer(item.audio, SAMPLE_RATE);
           await ttsPromise;
           if (workoutSeqRef.current === seq) {
@@ -92,7 +97,7 @@ export default function useWorkoutPlayer({ isReady, synthesize, cancelAll }) {
     setCurrentPhase({ name: 'preparing', label: '正在准备训练序列...' });
     currentPhaseRef.current = null;
 
-    const sequence = buildWorkoutSequence(planName, exercises);
+    const sequence = buildWorkoutSequence(planName, exercises, audioLangRef.current);
     sequenceRef.current = sequence;
     
     setTotalDuration(estimateWorkoutDuration(exercises));

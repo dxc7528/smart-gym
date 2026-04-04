@@ -1,20 +1,21 @@
 import React, { useState, useContext } from 'react';
 import { AppContext } from '../App.jsx';
 import WorkoutRunner from './WorkoutRunner.jsx';
+import { t } from '../utils/i18n.js';
 
 export default function AudioPanel({ planId, planName, exercises }) {
-  const { tts } = useContext(AppContext);
+  const { tts, lang } = useContext(AppContext);
   const [showRunner, setShowRunner] = useState(false);
 
   return (
     <>
       <div className="audio-panel">
         <div className="audio-info">
-          <h3>🎵 训练语音音频</h3>
+          <h3>{t(lang, 'audioPanelTitle')}</h3>
           <p>
             {!tts.isReady 
-              ? '抱歉，你的浏览器不支持原生语音合成'
-              : '点击开始训练，开始实时语音引导'
+              ? t(lang, 'audioNotSupportedDesc')
+              : t(lang, 'audioReadyDesc')
             }
           </p>
         </div>
@@ -28,7 +29,7 @@ export default function AudioPanel({ planId, planName, exercises }) {
               window.speechSynthesis.cancel();
 
               setTimeout(() => {
-                const dummy = new SpeechSynthesisUtterance('准备');
+                const dummy = new SpeechSynthesisUtterance(t(lang, 'startLoading'));
                 dummy.volume = 0.01;
                 dummy.rate = 2.0;
                 
@@ -45,7 +46,7 @@ export default function AudioPanel({ planId, planName, exercises }) {
           }}
         >
           <span className="btn-icon">⚡</span>
-          开始训练
+          {t(lang, 'startWorkoutBtn').replace('⚡ ', '')}
         </button>
       </div>
 

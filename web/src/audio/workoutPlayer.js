@@ -3,6 +3,7 @@
  */
 
 import { generateBeep, generateTick, generateSilence, concatAudio } from './soundEffects.js';
+import { t } from '../utils/i18n.js';
 
 const SAMPLE_RATE = 24000;
 
@@ -32,12 +33,12 @@ function buildTicks(durationInSeconds) {
  *   - { type: 'overlay', text: string, audio: Float32Array } — 在同一时间开始：播放音效和播报文本，**仅等待音效完成**（严格按照音效的时长前进）
  *   - { type: 'phase', ... } — 状态机标记
  */
-export function buildWorkoutSequence(planName, exercises) {
+export function buildWorkoutSequence(planName, exercises, lang = 'en') {
   const sequence = [];
 
   // 开场
-  sequence.push({ type: 'phase', name: 'intro', label: '准备开始' });
-  sequence.push({ type: 'tts', text: `开始今天的训练：${planName}。` });
+  sequence.push({ type: 'phase', name: 'intro', label: t(lang, 'startLoading') });
+  sequence.push({ type: 'tts', text: t(lang, 'phaseStartWorkout', { name: planName }) });
   sequence.push({ type: 'sound', audio: generateSilence(1, SAMPLE_RATE) });
 
   exercises.forEach((ex, exIdx) => {
@@ -53,7 +54,7 @@ export function buildWorkoutSequence(planName, exercises) {
       exerciseName: name,
       totalExercises: exercises.length,
     });
-    sequence.push({ type: 'tts', text: `下一个动作：${name}，共 ${sets} 组，每组 ${reps} 次。请做好准备` });
+    sequence.push({ type: 'tts', text: t(lang, 'phaseNextExercise', { name, sets, reps }) });
     sequence.push({ type: 'sound', audio: generateSilence(1.5, SAMPLE_RATE) });
 
     for (let s = 0; s < sets; s++) {
@@ -61,20 +62,20 @@ export function buildWorkoutSequence(planName, exercises) {
       sequence.push({ 
         type: 'phase', 
         name: 'set-start', 
-        label: `${name} - 第 ${s + 1}/${sets} 组`,
+        label: `${name} - ${s + 1}/${sets}`,
         exerciseIndex: exIdx,
         exerciseName: name,
         setIndex: s,
         totalSets: sets,
       });
-      sequence.push({ type: 'tts', text: `第 ${s + 1} 组，准备。3, 2, 1, 开始。` });
+      sequence.push({ type: 'tts', text: t(lang, 'phaseStartSet', { set: s + 1 }) });
 
       // Rep 循环
       for (let r = 0; r < reps; r++) {
         sequence.push({ 
           type: 'phase', 
           name: 'rep', 
-          label: `${name} - 第 ${s + 1} 组 / 第 ${r + 1}/${reps} 次`,
+          label: `${name} - ${s + 1}/${sets} / ${r + 1}/${reps}`,
           exerciseIndex: exIdx,
           setIndex: s,
           repIndex: r,
@@ -85,7 +86,7 @@ export function buildWorkoutSequence(planName, exercises) {
         if (tempo[0] > 0) {
           sequence.push({ 
             type: 'overlay', 
-            text: '推起', 
+            text: t(lang, 'tempoPush', { default: 'Push' }), 
             audio: buildTicks(tempo[0])
           });
         }
@@ -94,7 +95,7 @@ export function buildWorkoutSequence(planName, exercises) {
         if (tempo[1] > 0) {
           sequence.push({ 
             type: 'overlay', 
-            text: '停', 
+            text: t(lang, 'tempoHold', { default: 'Hold' }), 
             audio: buildTicks(tempo[1])
           });
         }
@@ -103,7 +104,7 @@ export function buildWorkoutSequence(planName, exercises) {
         if (tempo[2] > 0) {
           sequence.push({ 
             type: 'overlay', 
-            text: '下放', 
+            text: t(lang, 'tempoDown', { default: 'Down' }), 
             audio: buildTicks(tempo[2])
           });
         }
@@ -119,14 +120,17 @@ export function buildWorkoutSequence(planName, exercises) {
         sequence.push({ 
           type: 'phase', 
           name: 'rest', 
-          label: isLastSet ? `动作完成，休息 ${currentRest}s` : `休息 ${currentRest}s`,
+          label: t(lang, 'rest') + ` ${currentRest}s`,
           restDuration: currentRest,
         });
 
         if (isLastSet) {
-          sequence.push({ type: 'tts', text: `动作完成。休息 ${currentRest} 秒。` });
+          const nextExName = exercises[exIdx + 1]?.name;
+          const nextSets = exercises[exIdx + 1]?.sets;
+          const nextReps = exercises[exIdx + 1]?.reps;
+          sequence.push({ type: 'tts', text: t(lang, 'phaseRestTransition', { name: nextExName, sets: nextSets, reps: nextReps, time: currentRest }) });
         } else {
-          sequence.push({ type: 'tts', text: `休息 ${currentRest} 秒。` });
+          sequence.push({ type: 'tts', text: t(lang, 'phaseRestPhase', { time: currentRest }) });
         }
 
         // 休息时间音效
@@ -145,8 +149,8 @@ export function buildWorkoutSequence(planName, exercises) {
   });
 
   // 结束
-  sequence.push({ type: 'phase', name: 'complete', label: '训练结束' });
-  sequence.push({ type: 'tts', text: '训练结束，干得漂亮。记得拉伸。' });
+  sequence.push({ type: 'phase', name: 'complete', label: t(lang, 'complete') });
+  sequence.push({ type: 'tts', text: t(lang, 'phaseWorkoutComplete') });
 
   return sequence;
 }
