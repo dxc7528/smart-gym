@@ -9,12 +9,13 @@ export default function WorkoutRunner({ planName, exercises, onClose }) {
 
   // 仅在组件挂载时启动一次，cleanup 在卸载时停止
   useEffect(() => {
-    console.log('[WR] useEffect fired');
-    // 依赖 workoutSeqRef 序列号机制来处理 StrictMode，不在这里用 ref 拦截
-    console.log('[WR] calling startWorkout');
-    player.startWorkout(planName, exercises);
+    // React 18 StrictMode 可能会快速卸载重新挂载导致双重播报，加 50ms 延迟过滤掉幽灵第一帧
+    const timer = setTimeout(() => {
+      player.startWorkout(planName, exercises);
+    }, 50);
+
     return () => {
-      console.log('[WR] cleanup: calling stop');
+      clearTimeout(timer);
       player.stop();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

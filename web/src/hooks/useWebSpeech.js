@@ -15,25 +15,25 @@ function getBestVoice(voices, lang) {
   // 1. 定义各语言的正则表达式优先级队列（索引越小，优先级越高）
   const priorityMap = {
     'zh': [
-      /Xiaoxiao/i,                 // Edge 高级在线
-      /Yaoyao|Kangkang/i,          // Windows 本地
+      /\bXiaoxiao\b/i,                 // Edge 高级在线
+      /\bYaoyao\b|\bKangkang\b/i,          // Windows 本地
       /Google 普通话|Google.*zh-CN/i, // Chrome/Android
-      /Ting-Ting|Tingting/i,       // Mac
-      /Yushu|Mei-Jia/i,            // iOS
+      /\bTing-Ting\b|\bTingting\b/i,       // Mac
+      /\bYushu\b|\bMei-Jia\b/i,            // iOS
       /zh-CN|zh_CN/i               // 最终兜底
     ],
     'en': [
-      /Aria|Guy/i,                 // Edge 高级在线
+      /\bAria\b|\bGuy\b/i,                 // Edge 高级在线
       /Google US English|Google.*en-US/i, // Chrome/Android
-      /Samantha|Alex|Fred/i,       // Mac/iOS
-      /Zira|David/i,               // Windows 本地
+      /\bSamantha\b|\bAlex\b|\bFred\b/i,       // Mac/iOS
+      /\bZira\b|\bDavid\b/i,               // Windows 本地
       /en-US|en_US|en-GB/i         // 最终兜底
     ],
     'ja': [
-      /Nanami|Keita/i,             // Edge 高级在线
+      /\bNanami\b|\bKeita\b/i,             // Edge 高级在线
       /Google 日本語|Google.*ja-JP/i, // Chrome/Android
-      /Kyoko/i,                    // Mac/iOS
-      /Haruka|Ichiro/i,            // Windows 本地
+      /\bKyoko\b/i,                    // Mac/iOS
+      /\bHaruka\b|\bIchiro\b/i,            // Windows 本地
       /ja-JP|ja_JP/i               // 最终兜底
     ]
   };

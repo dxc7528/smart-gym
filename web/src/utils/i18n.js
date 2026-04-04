@@ -80,6 +80,10 @@ export const locales = {
     phaseAlmostDone: "10 seconds left.",
     phaseGetReady: "Get ready...",
     phaseWorkoutComplete: "Workout complete. Great job!",
+    
+    tempoPush: "Push",
+    tempoHold: "Hold",
+    tempoDown: "Down",
   },
   zh: {
     // Layout & General
@@ -162,6 +166,10 @@ export const locales = {
     phaseAlmostDone: "最后 10 秒。",
     phaseGetReady: "准备...",
     phaseWorkoutComplete: "训练完成，辛苦了！",
+    
+    tempoPush: "推起",
+    tempoHold: "停",
+    tempoDown: "下放",
   },
   ja: {
     // Layout & General
@@ -244,6 +252,10 @@ export const locales = {
     phaseAlmostDone: "残り 10 秒です。",
     phaseGetReady: "準備して...",
     phaseWorkoutComplete: "トレーニング完了です。お疲れ様でした！",
+    
+    tempoPush: "上げて",
+    tempoHold: "キープ",
+    tempoDown: "下ろして",
   }
 };
 

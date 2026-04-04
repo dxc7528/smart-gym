@@ -209,15 +209,15 @@ function HowToJA({ setPage }) {
         <div className="param-card">
           <p>テンポは反復時の<strong>時間的リズム</strong>を制御し、3つの数字で指定します：</p>
           <p style={{ textAlign: 'center', fontSize: '1.05rem', fontWeight: 700, letterSpacing: '0.1em', margin: '12px 0' }}>
-            <span style={{ color: 'var(--accent)' }}>上げる</span>
+            <span style={{ color: 'var(--accent)' }}>上げて</span>
             <span style={{ color: 'var(--text-muted)' }}> — </span>
             <span style={{ color: 'var(--warning)' }}>キープ</span>
             <span style={{ color: 'var(--text-muted)' }}> — </span>
-            <span style={{ color: 'var(--blue)' }}>下ろす</span>
+            <span style={{ color: 'var(--blue)' }}>下ろして</span>
           </p>
-          <p><strong style={{ color: 'var(--accent)' }}>① 上げる（短縮性）</strong>：筋肉が縮む段階。</p>
+          <p><strong style={{ color: 'var(--accent)' }}>① 上げて（短縮性）</strong>：筋肉が縮む段階。</p>
           <p><strong style={{ color: 'var(--warning)' }}>② キープ（等尺性）</strong>：ピーク位置での一時停止。<strong>0</strong>でそのまま次へ。</p>
-          <p><strong style={{ color: 'var(--blue)' }}>③ 下ろす（伸張性）</strong>：筋肉が伸びる段階。ここでは<strong>ゆっくり下ろす</strong>ことが重要です。</p>
+          <p><strong style={{ color: 'var(--blue)' }}>③ 下ろして（伸張性）</strong>：筋肉が伸びる段階。ここでは<strong>ゆっくり下ろす</strong>ことが重要です。</p>
         </div>
       </div>
     </>
