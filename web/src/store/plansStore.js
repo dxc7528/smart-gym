@@ -6,7 +6,7 @@
 const STORAGE_KEY = 'smart-gym-plans';
 
 function generateId() {
-  return crypto.randomUUID ? crypto.randomUUID() : 
+  return crypto.randomUUID ? crypto.randomUUID() :
     'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
       const r = Math.random() * 16 | 0;
       return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
@@ -69,7 +69,7 @@ export function deletePlan(planId) {
 
 const DEFAULT_PLANS = [
   {
-    name: 'Day 1 - Upper Body Push & Core',
+    name: 'Upper Body Push & Core',
     exercises: [
       { name: 'Push-ups', sets: 3, reps: 12, rest: 120, transition_rest: 120, tempo: [2, 0, 1] },
       { name: 'Triceps Dips', sets: 3, reps: 8, rest: 120, transition_rest: 120, tempo: [2, 0, 1] },
