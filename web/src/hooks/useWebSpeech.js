@@ -3,11 +3,64 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 // 全局缓存引用，防止被 Chrome/Safari 垃圾回收导致 onend 永远不触发
 window.__utterances = window.__utterances || new Set();
 
+/**
+ * 根据白名单优先级获取最佳音色
+ * @param {SpeechSynthesisVoice[]} voices - 从 speechSynthesis.getVoices() 获取的数组
+ * @param {string} lang - 目标语言: 'zh', 'en', 'ja'
+ * @returns {SpeechSynthesisVoice | null} 最佳音色对象
+ */
+function getBestVoice(voices, lang) {
+  if (!voices || voices.length === 0) return null;
+
+  // 1. 定义各语言的正则表达式优先级队列（索引越小，优先级越高）
+  const priorityMap = {
+    'zh': [
+      /Xiaoxiao/i,                 // Edge 高级在线
+      /Yaoyao|Kangkang/i,          // Windows 本地
+      /Google 普通话|Google.*zh-CN/i, // Chrome/Android
+      /Ting-Ting|Tingting/i,       // Mac
+      /Yushu|Mei-Jia/i,            // iOS
+      /zh-CN|zh_CN/i               // 最终兜底
+    ],
+    'en': [
+      /Aria|Guy/i,                 // Edge 高级在线
+      /Google US English|Google.*en-US/i, // Chrome/Android
+      /Samantha|Alex|Fred/i,       // Mac/iOS
+      /Zira|David/i,               // Windows 本地
+      /en-US|en_US|en-GB/i         // 最终兜底
+    ],
+    'ja': [
+      /Nanami|Keita/i,             // Edge 高级在线
+      /Google 日本語|Google.*ja-JP/i, // Chrome/Android
+      /Kyoko/i,                    // Mac/iOS
+      /Haruka|Ichiro/i,            // Windows 本地
+      /ja-JP|ja_JP/i               // 最终兜底
+    ]
+  };
+
+  const rules = priorityMap[lang];
+  // 如果语言不支持，则降级为中文
+  const fallbackRules = rules || priorityMap['zh'];
+  const targetLang = rules ? lang : 'zh';
+
+  // 2. 遍历规则队列，寻找匹配项
+  for (const regex of fallbackRules) {
+    const match = voices.find(voice => regex.test(voice.name) || regex.test(voice.lang));
+    if (match) {
+      return match;
+    }
+  }
+
+  // 3. 极端情况：如果规则都没命中，返回该语言的第一个可用音色
+  const fallbackRegex = new RegExp(targetLang, 'i');
+  return voices.find(v => fallbackRegex.test(v.lang)) || voices[0] || null;
+}
+
 export default function useWebSpeech() {
   const [isSupported, setIsSupported] = useState(false);
   const [voices, setVoices] = useState([]);
   const [preferredVoice, setPreferredVoice] = useState(null);
-  const preferredVoiceRef = useRef(null);
+  const voicesRef = useRef([]); // 持久化 voices 数组供 synthesize 同步读取
 
   useEffect(() => {
     if (!('speechSynthesis' in window)) {
@@ -22,18 +75,13 @@ export default function useWebSpeech() {
       if (allVoices.length === 0) return;
       
       setVoices(allVoices);
+      voicesRef.current = allVoices;
       
-      const zhVoices = allVoices.filter(v => v.lang.includes('zh-CN') || v.lang.includes('zh_CN'));
-      if (zhVoices.length > 0) {
-        // 优先使用本地声音，防止国内网络环境下云端网络引擎被墙导致卡死
-        const localVoices = zhVoices.filter(v => v.localService);
-        const candidates = localVoices.length > 0 ? localVoices : zhVoices;
-        
-        // Android 通常没有 Tingting 或 Xiaoxiao，会降级命中 candidates[0]，即安卓系统自带的默认中文引擎
-        const bestVoice = candidates.find(v => v.name.includes('Tingting') || v.name.includes('Xiaoxiao')) || candidates[0];
-        setPreferredVoice(bestVoice);
-        preferredVoiceRef.current = bestVoice;
-        console.log('[WebSpeech] Loaded CN voice:', bestVoice.name, 'local:', bestVoice.localService);
+      // 默认先尝试拿中文音色作为首选展示用
+      const bestZhVoice = getBestVoice(allVoices, 'zh');
+      if (bestZhVoice) {
+        setPreferredVoice(bestZhVoice);
+        console.log('[WebSpeech] Loaded CN voice:', bestZhVoice.name, 'local:', bestZhVoice.localService);
       }
     };
 
@@ -50,9 +98,10 @@ export default function useWebSpeech() {
   /**
    * 播放语音 — 使用计时器估算，避免依赖可能永不触发的 onend
    * @param {string} text
+   * @param {string} [lang='zh'] - 目标语言: 'zh', 'en', 'ja'
    * @returns {Promise<void>} 播报完成后 resolve
    */
-  const synthesize = useCallback((text) => {
+  const synthesize = useCallback((text, lang = 'zh') => {
     return new Promise((resolve) => {
       if (!('speechSynthesis' in window)) {
         resolve();
@@ -60,12 +109,13 @@ export default function useWebSpeech() {
       }
 
       const utterance = new SpeechSynthesisUtterance(text);
-      const voice = preferredVoiceRef.current;
+      const voice = getBestVoice(voicesRef.current, lang);
 
       if (voice) {
         utterance.voice = voice;
+        utterance.lang = voice.lang;
       } else {
-        utterance.lang = 'zh-CN';
+        utterance.lang = lang === 'en' ? 'en-US' : lang === 'ja' ? 'ja-JP' : 'zh-CN';
       }
 
       utterance.rate = 0.9;
