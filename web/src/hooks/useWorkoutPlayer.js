@@ -9,7 +9,7 @@ import { buildWorkoutSequence, estimateWorkoutDuration } from '../audio/workoutP
 
 const SAMPLE_RATE = 24000;
 
-export default function useWorkoutPlayer(webSpeechHook) {
+export default function useWorkoutPlayer({ isReady, synthesize, cancelAll }) {
   const [playerState, setPlayerState] = useState('idle'); // idle | preparing | playing | paused | complete
   const [currentPhase, setCurrentPhase] = useState(null);
   const [totalDuration, setTotalDuration] = useState(0);
@@ -17,40 +17,55 @@ export default function useWorkoutPlayer(webSpeechHook) {
   const [totalCount, setTotalCount] = useState(0);
 
   const abortRef = useRef(false);
+  const workoutSeqRef = useRef(0); // 区分不同启动序列
 
   const startWorkout = useCallback(async (planName, exercises) => {
-    if (!webSpeechHook.isReady) return;
+    const seq = ++workoutSeqRef.current;
+    console.log('[WP] startWorkout CALLED', { seq, isReady });
 
-    abortRef.current = false;
+    if (!isReady) {
+      console.log('[WP] early return: isReady=false');
+      return;
+    }
+
+    console.log('[WP] proceeding, setState preparing', { seq });
     setPlayerState('preparing');
     setCurrentPhase({ name: 'preparing', label: '正在准备训练序列...' });
 
     const sequence = buildWorkoutSequence(planName, exercises);
+    console.log('[WP] sequence built, items:', sequence.length, { seq });
+
     const duration = estimateWorkoutDuration(exercises);
     setTotalDuration(duration);
 
     // 统计算总数量，仅供进度显示参考
     const ttsItems = sequence.filter(s => s.type === 'tts' || s.type === 'overlay');
+    console.log('[WP] ttsItems count:', ttsItems.length, { seq });
     setTotalCount(ttsItems.length);
     setProcessedCount(0);
 
     let ttsProcessed = 0;
 
-    if (abortRef.current) return;
+    // 使用序列号区分启动批次：只有最新序列号的启动才有效
+    console.log('[WP] checking seq', { seq, currentSeq: workoutSeqRef.current });
+    if (workoutSeqRef.current !== seq) {
+      console.log('[WP] stale workout, skipping', { seq, currentSeq: workoutSeqRef.current });
+      return;
+    }
 
     // 重置音频系统的终止标记并尝试激活 Content
     audioEngine.resetAbort();
-    
-    // 中止当前正在播放的原生语音
-    if (window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-    }
 
+    console.log('[WP] setState playing', { seq });
     setPlayerState('playing');
 
     // 逐条处理序列，由 Promise 原生事件产生串行等待
     for (const item of sequence) {
-      if (abortRef.current) break;
+      // 每次循环检查序列号，过时则退出
+      if (workoutSeqRef.current !== seq) {
+        console.log('[WP] workout superseded, breaking', { seq, currentSeq: workoutSeqRef.current });
+        break;
+      }
 
       switch (item.type) {
         case 'phase':
@@ -62,18 +77,23 @@ export default function useWorkoutPlayer(webSpeechHook) {
           break;
 
         case 'tts': {
-          await webSpeechHook.synthesize(item.text);
+          console.log('[WP] tts synthesize START:', item.text.substring(0, 30), { seq });
+          await synthesize(item.text);
+          console.log('[WP] tts synthesize DONE:', item.text.substring(0, 30), { seq });
           ttsProcessed++;
           setProcessedCount(ttsProcessed);
           break;
         }
 
         case 'overlay': {
-          // 不 await speech，让它和 audio 并发执行
+          // 启动 TTS 和 audio 并发执行
           // 真正的节奏由严格生成的 tick audio 控制
-          webSpeechHook.synthesize(item.text).catch(() => {});
+          const ttsPromise = synthesize(item.text).catch(() => {});
+
           await audioEngine.playBuffer(item.audio, SAMPLE_RATE);
-          
+          // 等待 TTS 实际完成后再计入进度，确保进度准确
+          await ttsPromise;
+
           ttsProcessed++;
           setProcessedCount(ttsProcessed);
           break;
@@ -81,37 +101,49 @@ export default function useWorkoutPlayer(webSpeechHook) {
       }
     }
 
-    if (!abortRef.current) {
+    // 只有序列号匹配（未被 stop 打断）才进入 complete 状态
+    if (workoutSeqRef.current === seq) {
+      console.log('[WP] workout complete!', { seq });
       setPlayerState('complete');
       setCurrentPhase({ name: 'complete', label: '训练结束 🎉' });
     }
-  }, [webSpeechHook]);
+  }, [isReady, synthesize, cancelAll]);
 
   const pause = useCallback(() => {
+    console.log('[WP] pause called');
     audioEngine.pause();
-    if (window.speechSynthesis) {
-      window.speechSynthesis.pause();
-    }
+    // pause() 在 Safari 上不支持，忽略错误
+    try {
+      if (window.speechSynthesis?.pause) {
+        window.speechSynthesis.pause();
+      }
+    } catch {}
     setPlayerState('paused');
   }, []);
 
   const resume = useCallback(() => {
+    console.log('[WP] resume called');
     audioEngine.resume();
-    if (window.speechSynthesis) {
-      window.speechSynthesis.resume();
-    }
+    // resume() 在 Safari 上不支持，忽略错误
+    try {
+      if (window.speechSynthesis?.resume) {
+        window.speechSynthesis.resume();
+      }
+    } catch {}
     setPlayerState('playing');
   }, []);
 
   const stop = useCallback(() => {
+    console.log('[WP] stop called, current seq:', workoutSeqRef.current);
+    // 推进序列号，使当前正在运行的 workout 识别为过时并退出
+    ++workoutSeqRef.current;
+    console.log('[WP] seq advanced to:', workoutSeqRef.current);
     abortRef.current = true;
     audioEngine.stop();
-    if (window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-    }
+    cancelAll();
     setPlayerState('idle');
     setCurrentPhase(null);
-  }, []);
+  }, [cancelAll]);
 
   return {
     playerState,

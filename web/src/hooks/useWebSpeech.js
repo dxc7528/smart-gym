@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 // 全局缓存引用，防止被 Chrome/Safari 垃圾回收导致 onend 永远不触发
 window.__utterances = window.__utterances || new Set();
@@ -7,8 +7,8 @@ export default function useWebSpeech() {
   const [isSupported, setIsSupported] = useState(false);
   const [voices, setVoices] = useState([]);
   const [preferredVoice, setPreferredVoice] = useState(null);
+  const preferredVoiceRef = useRef(null);
 
-  // 初始化事件：选择最优的中文发音人
   useEffect(() => {
     if (!('speechSynthesis' in window)) {
       setIsSupported(false);
@@ -23,11 +23,17 @@ export default function useWebSpeech() {
       
       setVoices(allVoices);
       
-      // 优先选择包含 "zh-CN" 的高质量女声（如 macOS 的 Ting-Ting）
       const zhVoices = allVoices.filter(v => v.lang.includes('zh-CN') || v.lang.includes('zh_CN'));
       if (zhVoices.length > 0) {
-        const bestVoice = zhVoices.find(v => v.name.includes('Tingting') || v.name.includes('Xiaoxiao')) || zhVoices[0];
+        // 优先使用本地声音，防止国内网络环境下云端网络引擎被墙导致卡死
+        const localVoices = zhVoices.filter(v => v.localService);
+        const candidates = localVoices.length > 0 ? localVoices : zhVoices;
+        
+        // Android 通常没有 Tingting 或 Xiaoxiao，会降级命中 candidates[0]，即安卓系统自带的默认中文引擎
+        const bestVoice = candidates.find(v => v.name.includes('Tingting') || v.name.includes('Xiaoxiao')) || candidates[0];
         setPreferredVoice(bestVoice);
+        preferredVoiceRef.current = bestVoice;
+        console.log('[WebSpeech] Loaded CN voice:', bestVoice.name, 'local:', bestVoice.localService);
       }
     };
 
@@ -42,69 +48,87 @@ export default function useWebSpeech() {
   }, []);
 
   /**
-   * 播放语音
-   * @param {string} text 
+   * 播放语音 — 使用计时器估算，避免依赖可能永不触发的 onend
+   * @param {string} text
    * @returns {Promise<void>} 播报完成后 resolve
    */
   const synthesize = useCallback((text) => {
     return new Promise((resolve) => {
-      if (!isSupported) {
+      if (!('speechSynthesis' in window)) {
         resolve();
         return;
       }
 
       const utterance = new SpeechSynthesisUtterance(text);
-      
-      if (preferredVoice) {
-        utterance.voice = preferredVoice;
+      const voice = preferredVoiceRef.current;
+
+      if (voice) {
+        utterance.voice = voice;
       } else {
         utterance.lang = 'zh-CN';
       }
-      
-      // 语速适当调慢，中文系统语音常常过快
+
       utterance.rate = 0.9;
       utterance.pitch = 1.0;
+      utterance.volume = 1.0; // 明确指定音量，防止被前面的 dummy 静音污染
 
-      // 保持引用
+      // 估算语音时长作为 fallback 机制（onend 失效时触发）
+      // 按照较慢的语速（每秒约 3 个中文字）加上较大的缓冲时间（3秒），确保即使播报较慢也不会提前打断
+      const estimatedDuration = text.length * 350 + 3000;
+      const timeoutId = setTimeout(() => {
+        console.log('[WebSpeech] done (timeout)', text.substring(0, 20));
+        window.__utterances.delete(utterance);
+        resolve();
+      }, estimatedDuration);
+
       window.__utterances.add(utterance);
 
       const cleanup = () => {
+        clearTimeout(timeoutId);
         window.__utterances.delete(utterance);
         resolve();
       };
 
-      utterance.onend = () => {
-        cleanup();
-      };
-      
+      utterance.onend = cleanup;
       utterance.onerror = (e) => {
-        console.warn('语音合并播放中断或报错:', e);
+        if (e.error !== 'canceled') {
+          console.warn('[WebSpeech] onerror:', e.error);
+        }
         cleanup();
       };
 
-      // 修复 Chrome/Safari Bug：
-      // 立即调用的 speechSynthesis.cancel() 后紧接着调用 speak()，
-      // 会导致刚插入的 speak 也立刻遭遇 "canceled" error 或者直接丢弃。
-      // 所以我们给 speak 加一个微小的延时
-      window.speechSynthesis.cancel();
-      
-      setTimeout(() => {
+      try {
+        // 防御性恢复：如果引擎处于暂停/卡死状态，先 resume()
+        if (window.speechSynthesis.paused) {
+          window.speechSynthesis.resume();
+        }
         window.speechSynthesis.speak(utterance);
-        
-        // 另一个非常臭名昭著的 Chrome bug 补丁：
-        // 如果文本过长或长时间不发声，引擎可能会卡住。
-        // 定期调用 pause() 和 resume() 可以激活引擎（这里对短语非必需，但可作防御）
-        // if (process.env.NODE_ENV === 'development') {
-        //    window.speechSynthesis.pause(); window.speechSynthesis.resume();
-        // }
-      }, 50);
+      } catch (err) {
+        console.error('[WebSpeech] speak() threw:', err);
+        cleanup();
+      }
     });
-  }, [isSupported, preferredVoice]);
+  }, []); // 无依赖 — 通过 ref 访问 voice
+
+  /**
+   * 强制停止所有语音（仅在用户显式停止训练时调用）
+   */
+  const cancelAll = useCallback(() => {
+    // 清理所有挂起的引用
+    window.__utterances.clear();
+    // [修复核心] 2. 组件卸载或主动停止时，彻底清除全局队列
+    try {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+    } catch (e) {}
+  }, []);
 
   return {
     isReady: isSupported,
     voices,
     preferredVoice,
     synthesize,
+    cancelAll,
   };
 }

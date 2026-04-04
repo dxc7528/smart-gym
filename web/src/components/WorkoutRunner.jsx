@@ -4,14 +4,20 @@ import useWorkoutPlayer from '../hooks/useWorkoutPlayer.js';
 
 export default function WorkoutRunner({ planName, exercises, onClose }) {
   const { tts } = useContext(AppContext);
-  const player = useWorkoutPlayer(tts);
+  const player = useWorkoutPlayer(tts); // tts = { isReady, synthesize, cancelAll, ... }
 
+  // 仅在组件挂载时启动一次，cleanup 在卸载时停止
   useEffect(() => {
+    console.log('[WR] useEffect fired');
+    // 依赖 workoutSeqRef 序列号机制来处理 StrictMode，不在这里用 ref 拦截
+    console.log('[WR] calling startWorkout');
     player.startWorkout(planName, exercises);
     return () => {
+      console.log('[WR] cleanup: calling stop');
       player.stop();
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const progressPct = player.totalCount > 0
     ? Math.round((player.processedCount / player.totalCount) * 100)

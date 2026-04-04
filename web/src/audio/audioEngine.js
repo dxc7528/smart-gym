@@ -28,10 +28,7 @@ class AudioEngine {
   }
 
   get sampleRate() {
-    if (!this.ctx || this.ctx.state === 'closed') {
-      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    return this.ctx.sampleRate;
+    return this.ctx?.sampleRate ?? 24000;
   }
 
   /**
