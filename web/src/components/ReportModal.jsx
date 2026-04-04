@@ -1,9 +1,11 @@
 import React, { useState, useContext } from 'react';
-import { ToastContext } from '../App.jsx';
+import { AppContext, ToastContext } from '../App.jsx';
 import { saveReport } from '../store/reportsStore.js';
+import { t } from '../utils/i18n.js';
 
 export default function ReportModal({ planId, planName, exercises, onClose }) {
   const showToast = useContext(ToastContext);
+  const { lang } = useContext(AppContext);
   const [scores, setScores] = useState(exercises.map(() => 3));
   const [difficulties, setDifficulties] = useState(exercises.map(() => ''));
   const [notes, setNotes] = useState('');
@@ -23,10 +25,10 @@ export default function ReportModal({ planId, planName, exercises, onClose }) {
         score: scores[i],
         difficulty: difficulties[i],
       }));
-      const report = saveReport(planId, planName, exerciseScores, notes);
+      const report = saveReport(planId, planName, exerciseScores, notes, lang);
       setMdPreview(report.md_content);
       setSubmitted(true);
-      showToast('报告已生成 ✅');
+      showToast(t(lang, 'reportGeneratedToast'));
     } catch (e) {
       showToast(e.message, 'error');
     } finally {
@@ -38,7 +40,7 @@ export default function ReportModal({ planId, planName, exercises, onClose }) {
     <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="modal">
         <div className="modal-header">
-          <h2>训练复盘报告</h2>
+          <h2>{t(lang, 'reportModalTitle')}</h2>
           <button className="btn-close" onClick={onClose}>✕</button>
         </div>
         <div className="modal-body">
@@ -53,10 +55,10 @@ export default function ReportModal({ planId, planName, exercises, onClose }) {
                     onClick={() => handleScoreChange(idx, score)}
                   >
                     <input type="radio" name={`score-${idx}`} value={score} checked={scores[idx] === score} readOnly />
-                    {score === 3 ? '3: 能够完成每组' :
-                     score === 2 ? '2: 只能完成80%' :
-                     score === 1 ? '1: 只能完成50%' :
-                     '0: 完全不能完成'}
+                    {score === 3 ? t(lang, 'score3') :
+                     score === 2 ? t(lang, 'score2') :
+                     score === 1 ? t(lang, 'score1') :
+                     t(lang, 'score0')}
                   </label>
                 ))}
               </div>
@@ -69,31 +71,31 @@ export default function ReportModal({ planId, planName, exercises, onClose }) {
                   borderRadius: 'var(--radius-sm)',
                   background: 'var(--bg-surface)',
                   color: 'var(--text-primary)',
-                  fontFamily: 'var(--font)',
-                  fontSize: '0.85rem',
-                }}
-                placeholder="可选：填写本动作难点或感受..."
-                value={difficulties[idx]}
-                onChange={e => setDifficulties(prev => prev.map((d, i) => i === idx ? e.target.value : d))}
-              />
-            </div>
-          ))}
+                fontFamily: 'var(--font)',
+                fontSize: '0.85rem',
+              }}
+              placeholder={t(lang, 'difficultyPlaceholder')}
+              value={difficulties[idx]}
+              onChange={e => setDifficulties(prev => prev.map((d, i) => i === idx ? e.target.value : d))}
+            />
+          </div>
+        ))}
 
-          <div className="report-notes">
-            <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>总体备注 / 感受</label>
-            <textarea
-              rows="3"
-              placeholder="写下今天的训练感受…"
-              value={notes}
+        <div className="report-notes">
+          <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>{t(lang, 'overallNotesLabel')}</label>
+          <textarea
+            rows="3"
+            placeholder={t(lang, 'notesPlaceholder')}
+            value={notes}
               onChange={e => setNotes(e.target.value)}
             />
           </div>
 
-          {submitted && (
-            <div style={{ marginTop: 16 }}>
-              <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>报告已生成。Markdown 内容预览：</label>
-              <textarea
-                rows="8"
+        {submitted && (
+          <div style={{ marginTop: 16 }}>
+            <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>{t(lang, 'mdPreviewLabel')}</label>
+            <textarea
+              rows="8"
                 readOnly
                 style={{ fontFamily: 'monospace', fontSize: '0.78rem', marginTop: 8 }}
                 value={mdPreview}
@@ -103,7 +105,7 @@ export default function ReportModal({ planId, planName, exercises, onClose }) {
         </div>
         <div className="modal-footer">
           <button className="btn btn-ghost" onClick={onClose}>
-            {submitted ? '关闭' : '取消'}
+            {submitted ? t(lang, 'close') : t(lang, 'cancel')}
           </button>
           {!submitted && (
             <button
@@ -111,7 +113,7 @@ export default function ReportModal({ planId, planName, exercises, onClose }) {
               onClick={handleSubmit}
               disabled={saving}
             >
-              <span className="spinner"></span> 提交并生成
+              <span className="spinner"></span> {t(lang, 'submitReport')}
             </button>
           )}
         </div>

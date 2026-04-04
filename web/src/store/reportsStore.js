@@ -3,14 +3,9 @@
  * 移植自原 Python reports_store.py
  */
 
-const STORAGE_KEY = 'smart-gym-reports';
+import { t } from '../utils/i18n.js';
 
-const SCORE_LABELS = {
-  3: '⭐⭐⭐ 完成全部',
-  2: '⭐⭐　 完成约80%',
-  1: '⭐　　 完成约50%',
-  0: '✗　　 无法完成',
-};
+const STORAGE_KEY = 'smart-gym-reports';
 
 function readReports() {
   try {
@@ -25,23 +20,33 @@ function writeReports(reports) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(reports));
 }
 
-function generateMd(report) {
+function generateMd(report, lang) {
   const { plan_name, date, time, exercises, notes, completion_pct } = report;
 
+  const getScoreLabel = (score) => {
+    switch (score) {
+      case 3: return t(lang, 'mdScore3');
+      case 2: return t(lang, 'mdScore2');
+      case 1: return t(lang, 'mdScore1');
+      case 0: return t(lang, 'mdScore0');
+      default: return `${score}/3`;
+    }
+  };
+
   const lines = [
-    `# 训练总结：${plan_name}`,
+    t(lang, 'mdSummaryTitle', { name: plan_name }),
     '',
-    `**日期**：${date} ${time}`,
-    `**计划**：${plan_name}`,
+    t(lang, 'mdDate', { date, time }),
+    t(lang, 'mdPlan', { name: plan_name }),
     '',
-    '## 动作评分',
+    t(lang, 'mdExerciseScoresTitle'),
     '',
-    '| 动作 | 完成度 | 难点描述 |',
+    t(lang, 'mdTableHeader'),
     '|------|--------|---------|',
   ];
 
   exercises.forEach(ex => {
-    const label = SCORE_LABELS[ex.score] || `${ex.score}/3`;
+    const label = getScoreLabel(ex.score);
     const difficulty = (ex.difficulty || '').trim() || '—';
     lines.push(`| ${ex.name} | ${label} | ${difficulty} |`);
   });
@@ -49,20 +54,20 @@ function generateMd(report) {
   const totalScore = exercises.reduce((acc, e) => acc + (e.score || 0), 0);
   lines.push(
     '',
-    '## 总体完成度',
+    t(lang, 'mdTotalCompletionTitle'),
     '',
-    `**${completion_pct}%**（${totalScore} ÷ ${exercises.length * 3} × 100%）`,
+    `**${completion_pct}%** (${totalScore} ÷ ${exercises.length * 3} × 100%)`,
     '',
   );
 
   if (notes) {
-    lines.push('## 备注', '', notes, '');
+    lines.push(t(lang, 'mdNotesTitle'), '', notes, '');
   }
 
   return lines.join('\n');
 }
 
-export function saveReport(planId, planName, exerciseScores, notes = '') {
+export function saveReport(planId, planName, exerciseScores, notes = '', lang = 'en') {
   const now = new Date();
   const dateStr = now.toISOString().split('T')[0];
   const timeStr = now.toTimeString().slice(0, 5);
@@ -83,7 +88,7 @@ export function saveReport(planId, planName, exerciseScores, notes = '') {
     completion_pct: pct,
   };
 
-  report.md_content = generateMd(report);
+  report.md_content = generateMd(report, lang);
 
   const reports = readReports();
   reports.unshift(report);
