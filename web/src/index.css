@@ -1337,3 +1337,39 @@ textarea:focus {
   .motivational-banner { padding: 18px 20px; }
   .banner-title { font-size: 1.3rem; }
 }
+
+/* ---------- PWA Updater Toast ---------- */
+.pwa-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.pwa-toast--ready {
+  background: #22C55E;
+  color: white;
+}
+
+.pwa-toast--update {
+  background: #F97316;
+  color: white;
+}
+
+.pwa-toast--update button {
+  background: white;
+  color: #F97316;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+}
