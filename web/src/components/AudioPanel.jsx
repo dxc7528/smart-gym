@@ -13,8 +13,8 @@ export default function AudioPanel({ planId, planName, exercises }) {
           <h3>🎵 训练语音音频</h3>
           <p>
             {!tts.isReady 
-              ? '请等待 TTS 模型加载完成…'
-              : '点击开始训练，实时生成语音引导并播放'
+              ? '抱歉，你的浏览器不支持原生语音合成'
+              : '点击开始训练，开始实时语音引导'
             }
           </p>
         </div>

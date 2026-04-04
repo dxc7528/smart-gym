@@ -17,18 +17,28 @@ class AudioEngine {
     this._aborted = false;
   }
 
-  _ensureContext() {
+  async _ensureContext() {
     if (!this.ctx || this.ctx.state === 'closed') {
       this.ctx = new (window.AudioContext || window.webkitAudioContext)();
     }
     if (this.ctx.state === 'suspended') {
-      this.ctx.resume();
+      await this.ctx.resume();
     }
     return this.ctx;
   }
 
   get sampleRate() {
-    return this._ensureContext().sampleRate;
+    if (!this.ctx || this.ctx.state === 'closed') {
+      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    return this.ctx.sampleRate;
+  }
+
+  /**
+   * 重置中止标记（在新播放会话开始前调用）
+   */
+  resetAbort() {
+    this._aborted = false;
   }
 
   /**
@@ -37,32 +47,48 @@ class AudioEngine {
    * @param {number} sampleRate - 原始采样率
    * @returns {Promise<void>} 播放完成的 Promise
    */
-  playBuffer(audioData, sampleRate = 24000) {
-    return new Promise((resolve, reject) => {
+  async playBuffer(audioData, sampleRate = 24000) {
+    if (this._aborted) {
+      return;
+    }
+
+    // 验证音频数据
+    if (!audioData || !(audioData instanceof Float32Array) || audioData.length === 0) {
+      console.warn('audioEngine.playBuffer: 无效的音频数据, 跳过');
+      return;
+    }
+
+    const ctx = await this._ensureContext();
+
+    return new Promise((resolve) => {
       if (this._aborted) {
         resolve();
         return;
       }
 
-      const ctx = this._ensureContext();
-      const buffer = ctx.createBuffer(1, audioData.length, sampleRate);
-      buffer.copyToChannel(audioData, 0);
+      try {
+        const buffer = ctx.createBuffer(1, audioData.length, sampleRate);
+        buffer.copyToChannel(audioData, 0);
 
-      const source = ctx.createBufferSource();
-      source.buffer = buffer;
-      source.connect(ctx.destination);
+        const source = ctx.createBufferSource();
+        source.buffer = buffer;
+        source.connect(ctx.destination);
 
-      this.currentSource = source;
-      this.currentBuffer = buffer;
-      this.currentStartTime = ctx.currentTime;
-      this.currentOffset = 0;
+        this.currentSource = source;
+        this.currentBuffer = buffer;
+        this.currentStartTime = ctx.currentTime;
+        this.currentOffset = 0;
 
-      source.onended = () => {
-        this.currentSource = null;
-        resolve();
-      };
+        source.onended = () => {
+          this.currentSource = null;
+          resolve();
+        };
 
-      source.start(0);
+        source.start(0);
+      } catch (err) {
+        console.error('audioEngine.playBuffer error:', err);
+        resolve(); // 不要阻塞后续播放
+      }
     });
   }
 

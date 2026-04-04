@@ -10,7 +10,7 @@ export default function Layout({ children }) {
       <header>
         <span className="logo-icon">🏋️</span>
         <span className="logo">Smart Gym</span>
-        <ModelStatus status={tts.status} progress={tts.progress} error={tts.error} onRetry={tts.reinit} useFallback={tts.useFallback} />
+        <ModelStatus isReady={tts.isReady} preferredVoice={tts.preferredVoice} />
         <span className="subtitle">训练计划 · 语音提示</span>
       </header>
       {children}

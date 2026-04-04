@@ -1,6 +1,6 @@
 import React, { createContext, useState, useCallback } from 'react';
 import './index.css';
-import useTTSWorker from './hooks/useTTSWorker.js';
+import useWebSpeech from './hooks/useWebSpeech.js';
 import Layout from './components/Layout.jsx';
 import Sidebar from './components/Sidebar.jsx';
 import PlanEditor from './components/PlanEditor.jsx';
@@ -23,8 +23,8 @@ export default function App() {
     return all.length > 0 ? all[0].id : null;
   });
 
-  // TTS Worker
-  const tts = useTTSWorker();
+  // 依赖原生 Web Speech
+  const tts = useWebSpeech();
 
   // Toast 系统
   const [toasts, setToasts] = useState([]);
