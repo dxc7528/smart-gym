@@ -30,7 +30,7 @@ export default function useWorkoutPlayer(webSpeechHook) {
     setTotalDuration(duration);
 
     // 统计算总数量，仅供进度显示参考
-    const ttsItems = sequence.filter(s => s.type === 'tts');
+    const ttsItems = sequence.filter(s => s.type === 'tts' || s.type === 'overlay');
     setTotalCount(ttsItems.length);
     setProcessedCount(0);
 
@@ -63,6 +63,17 @@ export default function useWorkoutPlayer(webSpeechHook) {
 
         case 'tts': {
           await webSpeechHook.synthesize(item.text);
+          ttsProcessed++;
+          setProcessedCount(ttsProcessed);
+          break;
+        }
+
+        case 'overlay': {
+          // 不 await speech，让它和 audio 并发执行
+          // 真正的节奏由严格生成的 tick audio 控制
+          webSpeechHook.synthesize(item.text).catch(() => {});
+          await audioEngine.playBuffer(item.audio, SAMPLE_RATE);
+          
           ttsProcessed++;
           setProcessedCount(ttsProcessed);
           break;

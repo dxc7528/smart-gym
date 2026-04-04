@@ -1,64 +1,44 @@
 /**
  * workoutPlayer.js — 训练音频编排（核心业务逻辑）
- * 移植自原 Python instructor_audio.py
- * 
- * 采用流式策略：先生成前几段内容开始播放，同时后台继续生成后续内容
  */
 
 import { generateBeep, generateTick, generateSilence, concatAudio } from './soundEffects.js';
 
-const SAMPLE_RATE = 24000; // Kokoro 模型输出采样率
+const SAMPLE_RATE = 24000;
 
 /**
- * 构建单个 Rep 的音效部分（tick 节拍器 + 静音填充）
- * 注意：语音部分由 TTS 引擎生成，这里只负责 tick 和 silence
+ * 构建精确时长的 Ticks
+ * 每秒 1 个 tick，总时长严格等于 durationInSeconds
  */
-function buildRepTicksAndSilence(phaseDuration, voiceDuration = 0) {
+function buildTicks(durationInSeconds) {
+  if (durationInSeconds <= 0) return generateSilence(0.01, SAMPLE_RATE);
   const segments = [];
-  
-  // 语音播放完毕后，用 tick 填满剩余时间
-  for (let sec = 1; sec <= Math.floor(phaseDuration); sec++) {
-    const tickTime = sec;
-    if (tickTime <= voiceDuration) continue; // 语音还没播完
-    
-    const gap = tickTime - (segments.length === 0 ? voiceDuration : 0);
-    if (gap > 0 && segments.length === 0) {
-      segments.push(generateSilence(gap, SAMPLE_RATE));
-    } else if (segments.length > 0) {
-      segments.push(generateSilence(1 - 0.03, SAMPLE_RATE)); // 1s 间隔减去 tick 时长
-    }
+  for (let sec = 1; sec <= Math.floor(durationInSeconds); sec++) {
+    // TICK_DURATION 之前设定为 0.03s
     segments.push(generateTick(SAMPLE_RATE));
+    segments.push(generateSilence(1 - 0.03, SAMPLE_RATE)); 
   }
-
-  // 修正总时长
-  const currentDuration = segments.reduce((sum, s) => sum + s.length, 0) / SAMPLE_RATE + voiceDuration;
-  const remaining = phaseDuration - currentDuration;
+  const remaining = durationInSeconds - Math.floor(durationInSeconds);
   if (remaining > 0.01) {
     segments.push(generateSilence(remaining, SAMPLE_RATE));
   }
-
-  return segments.length > 0 ? concatAudio(...segments) : generateSilence(Math.max(0, phaseDuration - voiceDuration), SAMPLE_RATE);
+  return segments.length > 0 ? concatAudio(...segments) : generateSilence(0.01, SAMPLE_RATE);
 }
 
 /**
  * 生成训练音频指令序列
- * 返回一个指令数组，每个指令代表一个需要播放的音频片段
- * 指令类型：
- *   - { type: 'tts', text: string } — 需要 TTS 合成的文本
- *   - { type: 'sound', audio: Float32Array } — 直接播放的音效
- *   - { type: 'phase', name: string } — 阶段标记（用于 UI 更新）
- * 
- * @param {string} planName
- * @param {Array} exercises
- * @returns {Array} 指令序列
+ *   - { type: 'tts', text: string } — 严格串行播报（等待播完）
+ *   - { type: 'sound', audio: Float32Array } — 直接播放音效（等待播完）
+ *   - { type: 'overlay', text: string, audio: Float32Array } — 在同一时间开始：播放音效和播报文本，**仅等待音效完成**（严格按照音效的时长前进）
+ *   - { type: 'phase', ... } — 状态机标记
  */
 export function buildWorkoutSequence(planName, exercises) {
   const sequence = [];
 
   // 开场
   sequence.push({ type: 'phase', name: 'intro', label: '准备开始' });
-  sequence.push({ type: 'tts', text: `开始今天的训练：${planName}。请做好准备。` });
-  sequence.push({ type: 'sound', audio: generateSilence(3, SAMPLE_RATE) });
+  sequence.push({ type: 'tts', text: `开始今天的训练：${planName}。` });
+  sequence.push({ type: 'sound', audio: generateSilence(1, SAMPLE_RATE) });
 
   exercises.forEach((ex, exIdx) => {
     const { name, sets, reps, rest, tempo } = ex;
@@ -73,8 +53,8 @@ export function buildWorkoutSequence(planName, exercises) {
       exerciseName: name,
       totalExercises: exercises.length,
     });
-    sequence.push({ type: 'tts', text: `下一个动作：${name}，共 ${sets} 组，每组 ${reps} 次。` });
-    sequence.push({ type: 'sound', audio: generateSilence(2, SAMPLE_RATE) });
+    sequence.push({ type: 'tts', text: `下一个动作：${name}，共 ${sets} 组，每组 ${reps} 次。请做好准备` });
+    sequence.push({ type: 'sound', audio: generateSilence(1.5, SAMPLE_RATE) });
 
     for (let s = 0; s < sets; s++) {
       // 组前倒数
@@ -102,23 +82,30 @@ export function buildWorkoutSequence(planName, exercises) {
         });
 
         // 向心/发力阶段
-        sequence.push({ type: 'tts', text: '推起' });
-        if (tempo[0] > 0.8) {
-          sequence.push({ type: 'sound', audio: buildRepTicksAndSilence(tempo[0], 0.6) });
+        if (tempo[0] > 0) {
+          sequence.push({ 
+            type: 'overlay', 
+            text: '推起', 
+            audio: buildTicks(tempo[0])
+          });
         }
 
         // 停顿阶段
         if (tempo[1] > 0) {
-          sequence.push({ type: 'tts', text: '停' });
-          if (tempo[1] > 0.5) {
-            sequence.push({ type: 'sound', audio: buildRepTicksAndSilence(tempo[1], 0.3) });
-          }
+          sequence.push({ 
+            type: 'overlay', 
+            text: '停', 
+            audio: buildTicks(tempo[1])
+          });
         }
 
         // 离心/复原阶段
-        sequence.push({ type: 'tts', text: '下放' });
-        if (tempo[2] > 0.8) {
-          sequence.push({ type: 'sound', audio: buildRepTicksAndSilence(tempo[2], 0.6) });
+        if (tempo[2] > 0) {
+          sequence.push({ 
+            type: 'overlay', 
+            text: '下放', 
+            audio: buildTicks(tempo[2])
+          });
         }
       }
 
@@ -137,7 +124,7 @@ export function buildWorkoutSequence(planName, exercises) {
         });
 
         if (isLastSet) {
-          sequence.push({ type: 'tts', text: `动作完成。休息 ${currentRest} 秒，准备切换动作。` });
+          sequence.push({ type: 'tts', text: `动作完成。休息 ${currentRest} 秒。` });
         } else {
           sequence.push({ type: 'tts', text: `休息 ${currentRest} 秒。` });
         }
@@ -164,9 +151,6 @@ export function buildWorkoutSequence(planName, exercises) {
   return sequence;
 }
 
-/**
- * 估算训练总时长（秒）
- */
 export function estimateWorkoutDuration(exercises) {
   let total = 5; // 开场
   exercises.forEach((ex, exIdx) => {
