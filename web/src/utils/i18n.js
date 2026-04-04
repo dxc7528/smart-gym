@@ -7,9 +7,31 @@ export const locales = {
     voiceNotSupported: "Voice Not Supported",
     voiceDefault: "Voice Ready",
     close: "Close",
-    
+
+    // Progress Dashboard
+    statStreak: "Day Streak",
+    statWorkouts: "Workouts",
+    statExercises: "Exercises Done",
+    statAvgCompletion: "Avg Completion",
+    streakTitle: "Start Your Streak!",
+    streakSubtitle: "Complete workouts to build consecutive days",
+    notYetCompleted: "Not yet completed",
+
+    // Workout Preview
+    exercises: "Exercises",
+    sets: "Sets",
+    duration: "Duration",
+    intensityHigh: "High Intensity",
+    intensityMedium: "Medium",
+    intensityLow: "Low Intensity",
+    unnamedExercise: "Unnamed",
+    workoutPreview: "Workout Preview",
+    motivationalTitle: "Ready to Crush It?",
+    motivationalSubtitle: "Select a plan below and start your workout journey",
+
     // Sidebar
     navLabel: "Navigation",
+    navDashboard: "Dashboard",
     navPlans: "Workout Plans",
     newPlan: "New Plan",
     howToUse: "How to Use",
@@ -116,9 +138,31 @@ export const locales = {
     voiceNotSupported: "未支持原生语音",
     voiceDefault: "语音就绪",
     close: "关闭",
-    
+
+    // Progress Dashboard
+    statStreak: "连续天数",
+    statWorkouts: "训练次数",
+    statExercises: "完成动作",
+    statAvgCompletion: "平均完成度",
+    streakTitle: "开始连续训练！",
+    streakSubtitle: "完成训练以建立连续记录",
+    notYetCompleted: "尚未完成",
+
+    // Workout Preview
+    exercises: "动作",
+    sets: "组数",
+    duration: "时长",
+    intensityHigh: "高强度",
+    intensityMedium: "中等强度",
+    intensityLow: "低强度",
+    unnamedExercise: "未命名动作",
+    workoutPreview: "训练预览",
+    motivationalTitle: "准备好突破了吗？",
+    motivationalSubtitle: "选择下方计划开始你的训练之旅",
+
     // Sidebar
     navLabel: "导航",
+    navDashboard: "数据看板",
     navPlans: "训练计划",
     newPlan: "新建计划",
     howToUse: "使用说明",
@@ -225,9 +269,31 @@ export const locales = {
     voiceNotSupported: "音声未対応",
     voiceDefault: "音声準備完了",
     close: "閉じる",
-    
+
+    // Progress Dashboard
+    statStreak: "連続日数",
+    statWorkouts: "トレーニング",
+    statExercises: "完了種目",
+    statAvgCompletion: "平均達成率",
+    streakTitle: "連続記録を始めよう！",
+    streakSubtitle: "トレーニングを完了して連続記録を築こう",
+    notYetCompleted: "未完了",
+
+    // Workout Preview
+    exercises: "種目を実施",
+    sets: "セット",
+    duration: "時間",
+    intensityHigh: "高強度",
+    intensityMedium: "中強度",
+    intensityLow: "低強度",
+    unnamedExercise: "名称未設定",
+    workoutPreview: "トレーニングプレビュー",
+    motivationalTitle: "やるき満タン？",
+    motivationalSubtitle: "下のプランを選んでトレーニングを始めましょう",
+
     // Sidebar
     navLabel: "ナビゲーション",
+    navDashboard: "ダッシュボード",
     navPlans: "プラン",
     newPlan: "新規プラン",
     howToUse: "使い方",

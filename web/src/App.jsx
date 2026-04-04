@@ -1,12 +1,14 @@
-import React, { createContext, useState, useCallback } from 'react';
+import React, { createContext, useState, useCallback, useMemo } from 'react';
 import './index.css';
 import useWebSpeech from './hooks/useWebSpeech.js';
 import Layout from './components/Layout.jsx';
 import Sidebar from './components/Sidebar.jsx';
 import PlanEditor from './components/PlanEditor.jsx';
 import HowToPage from './components/HowToPage.jsx';
+import DashboardPage from './components/DashboardPage.jsx';
 import Toast from './components/Toast.jsx';
 import { getAllPlans, seedDefaultPlans } from './store/plansStore.js';
+import { getAllReports } from './store/reportsStore.js';
 import { t } from './utils/i18n.js';
 
 // 全局上下文
@@ -17,7 +19,7 @@ export const ToastContext = createContext(null);
 seedDefaultPlans();
 
 export default function App() {
-  const [page, setPage] = useState('plans'); // 'plans' | 'howto'
+  const [page, setPage] = useState('dashboard'); // 'dashboard' | 'plans' | 'howto'
   const [plans, setPlans] = useState(() => getAllPlans());
   const [currentPlanId, setCurrentPlanId] = useState(() => {
     const all = getAllPlans();
@@ -37,6 +39,9 @@ export default function App() {
     setToasts(prev => [...prev, { id, msg, type }]);
     setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3500);
   }, []);
+
+  // Reports for progress tracking
+  const reports = useMemo(() => getAllReports(), []);
 
   const refreshPlans = useCallback(() => {
     setPlans(getAllPlans());
@@ -66,16 +71,36 @@ export default function App() {
         <Layout>
           <Sidebar />
           <main>
-            {page === 'howto' ? (
+            {page === 'dashboard' ? (
+              <DashboardPage
+                plans={plans}
+                currentPlanId={currentPlanId}
+                selectPlan={selectPlan}
+                reports={reports}
+                lang={lang}
+              />
+            ) : page === 'howto' ? (
               <HowToPage />
-            ) : currentPlanId || page === 'new' ? (
-              <PlanEditor key={currentPlanId || 'new'} />
-            ) : (
+            ) : page === 'plans' && currentPlanId ? (
+              <PlanEditor key={currentPlanId} />
+            ) : page === 'plans' && !currentPlanId ? (
               <div className="empty-state">
-                <div className="empty-icon">📋</div>
+                <div className="empty-icon">
+                  <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.3">
+                    <path d="M6 5v14M18 5v14M6 12h12M3 5h18M3 19h18"/>
+                  </svg>
+                </div>
                 <h2>{t(lang, 'noPlanTitle')}</h2>
                 <p>{t(lang, 'noPlanDesc')}</p>
               </div>
+            ) : (
+              <DashboardPage
+                plans={plans}
+                currentPlanId={currentPlanId}
+                selectPlan={selectPlan}
+                reports={reports}
+                lang={lang}
+              />
             )}
           </main>
         </Layout>

@@ -3,6 +3,12 @@ import { AppContext } from '../App.jsx';
 import WorkoutRunner from './WorkoutRunner.jsx';
 import { t } from '../utils/i18n.js';
 
+const BoltIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+  </svg>
+);
+
 export default function AudioPanel({ planId, planName, exercises }) {
   const { tts, lang } = useContext(AppContext);
   const [showRunner, setShowRunner] = useState(false);
@@ -13,7 +19,7 @@ export default function AudioPanel({ planId, planName, exercises }) {
         <div className="audio-info">
           <h3>{t(lang, 'audioPanelTitle')}</h3>
           <p>
-            {!tts.isReady 
+            {!tts.isReady
               ? t(lang, 'audioNotSupportedDesc')
               : t(lang, 'audioReadyDesc')
             }
@@ -32,7 +38,7 @@ export default function AudioPanel({ planId, planName, exercises }) {
                 const dummy = new SpeechSynthesisUtterance(t(lang, 'startLoading'));
                 dummy.volume = 0.01;
                 dummy.rate = 2.0;
-                
+
                 const startRunner = () => setShowRunner(true);
                 // 必须等待 dummy 发音完全结束释放引擎后，才真正进入训练模块，否则 Safari 会将提前中断视为授权失败而永久锁死
                 dummy.onend = startRunner;
@@ -45,7 +51,7 @@ export default function AudioPanel({ planId, planName, exercises }) {
             }
           }}
         >
-          <span className="btn-icon">⚡</span>
+          <span className="btn-icon"><BoltIcon /></span>
           {t(lang, 'startWorkoutBtn').replace('⚡ ', '')}
         </button>
       </div>
