@@ -16,60 +16,37 @@ export default function useWorkoutPlayer({ isReady, synthesize, cancelAll }) {
   const [processedCount, setProcessedCount] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
 
+  const sequenceRef = useRef([]);
+  const currentIndexRef = useRef(0);
+  const currentPhaseRef = useRef(null);
+  const ttsProcessedRef = useRef(0);
   const abortRef = useRef(false);
-  const workoutSeqRef = useRef(0); // 区分不同启动序列
+  const workoutSeqRef = useRef(0);
 
-  const startWorkout = useCallback(async (planName, exercises) => {
+  const playFromIndex = useCallback(async (startIndex) => {
     const seq = ++workoutSeqRef.current;
-    console.log('[WP] startWorkout CALLED', { seq, isReady });
-
-    if (!isReady) {
-      console.log('[WP] early return: isReady=false');
-      return;
-    }
-
-    console.log('[WP] proceeding, setState preparing', { seq });
-    setPlayerState('preparing');
-    setCurrentPhase({ name: 'preparing', label: '正在准备训练序列...' });
-
-    const sequence = buildWorkoutSequence(planName, exercises);
-    console.log('[WP] sequence built, items:', sequence.length, { seq });
-
-    const duration = estimateWorkoutDuration(exercises);
-    setTotalDuration(duration);
-
-    // 统计算总数量，仅供进度显示参考
-    const ttsItems = sequence.filter(s => s.type === 'tts' || s.type === 'overlay');
-    console.log('[WP] ttsItems count:', ttsItems.length, { seq });
-    setTotalCount(ttsItems.length);
-    setProcessedCount(0);
-
-    let ttsProcessed = 0;
-
-    // 使用序列号区分启动批次：只有最新序列号的启动才有效
-    console.log('[WP] checking seq', { seq, currentSeq: workoutSeqRef.current });
-    if (workoutSeqRef.current !== seq) {
-      console.log('[WP] stale workout, skipping', { seq, currentSeq: workoutSeqRef.current });
-      return;
-    }
-
-    // 重置音频系统的终止标记并尝试激活 Content
+    
+    // 中断一切正在进行的任务
+    audioEngine.stop();
+    cancelAll();
     audioEngine.resetAbort();
 
-    console.log('[WP] setState playing', { seq });
     setPlayerState('playing');
+    
+    const sequence = sequenceRef.current;
+    currentIndexRef.current = startIndex;
 
-    // 逐条处理序列，由 Promise 原生事件产生串行等待
-    for (const item of sequence) {
-      // 每次循环检查序列号，过时则退出
+    while (currentIndexRef.current < sequence.length) {
       if (workoutSeqRef.current !== seq) {
-        console.log('[WP] workout superseded, breaking', { seq, currentSeq: workoutSeqRef.current });
-        break;
+        break; // 遭到新的播放打断
       }
+
+      const item = sequence[currentIndexRef.current];
 
       switch (item.type) {
         case 'phase':
           setCurrentPhase(item);
+          currentPhaseRef.current = item;
           break;
 
         case 'sound':
@@ -77,67 +54,157 @@ export default function useWorkoutPlayer({ isReady, synthesize, cancelAll }) {
           break;
 
         case 'tts': {
-          console.log('[WP] tts synthesize START:', item.text.substring(0, 30), { seq });
           await synthesize(item.text);
-          console.log('[WP] tts synthesize DONE:', item.text.substring(0, 30), { seq });
-          ttsProcessed++;
-          setProcessedCount(ttsProcessed);
+          if (workoutSeqRef.current === seq) {
+            ttsProcessedRef.current++;
+            setProcessedCount(ttsProcessedRef.current);
+          }
           break;
         }
 
         case 'overlay': {
-          // 启动 TTS 和 audio 并发执行
-          // 真正的节奏由严格生成的 tick audio 控制
           const ttsPromise = synthesize(item.text).catch(() => {});
-
           await audioEngine.playBuffer(item.audio, SAMPLE_RATE);
-          // 等待 TTS 实际完成后再计入进度，确保进度准确
           await ttsPromise;
-
-          ttsProcessed++;
-          setProcessedCount(ttsProcessed);
+          if (workoutSeqRef.current === seq) {
+            ttsProcessedRef.current++;
+            setProcessedCount(ttsProcessedRef.current);
+          }
           break;
         }
       }
+
+      if (workoutSeqRef.current === seq) {
+        currentIndexRef.current++;
+      }
     }
 
-    // 只有序列号匹配（未被 stop 打断）才进入 complete 状态
-    if (workoutSeqRef.current === seq) {
-      console.log('[WP] workout complete!', { seq });
+    if (workoutSeqRef.current === seq && currentIndexRef.current >= sequence.length) {
       setPlayerState('complete');
       setCurrentPhase({ name: 'complete', label: '训练结束 🎉' });
     }
-  }, [isReady, synthesize, cancelAll]);
+  }, [synthesize, cancelAll]);
+
+  const startWorkout = useCallback(async (planName, exercises) => {
+    if (!isReady) return;
+
+    setPlayerState('preparing');
+    setCurrentPhase({ name: 'preparing', label: '正在准备训练序列...' });
+    currentPhaseRef.current = null;
+
+    const sequence = buildWorkoutSequence(planName, exercises);
+    sequenceRef.current = sequence;
+    
+    setTotalDuration(estimateWorkoutDuration(exercises));
+
+    const ttsItems = sequence.filter(s => s.type === 'tts' || s.type === 'overlay');
+    setTotalCount(ttsItems.length);
+    
+    ttsProcessedRef.current = 0;
+    setProcessedCount(0);
+
+    playFromIndex(0);
+  }, [isReady, playFromIndex]);
+
+  const seekTo = useCallback((targetType, direction) => {
+    if (playerState !== 'playing' && playerState !== 'paused') return;
+
+    const sequence = sequenceRef.current;
+    if (!sequence || sequence.length === 0) return;
+
+    const phase = currentPhaseRef.current;
+    if (!phase) return;
+
+    const currentEx = phase.exerciseIndex ?? 0;
+    const currentSet = phase.setIndex ?? 0;
+
+    let targetIdx = currentIndexRef.current;
+
+    if (direction === 'next') {
+      for (let i = currentIndexRef.current + 1; i < sequence.length; i++) {
+        const p = sequence[i];
+        if (p.type === 'phase') {
+          if (targetType === 'exercise' && p.exerciseIndex !== undefined && p.exerciseIndex > currentEx) {
+            targetIdx = i;
+            break;
+          }
+          if (targetType === 'set' && p.setIndex !== undefined && (p.exerciseIndex > currentEx || (p.exerciseIndex === currentEx && p.setIndex > currentSet))) {
+            targetIdx = i;
+            break;
+          }
+        }
+      }
+    } else if (direction === 'prev') {
+      let foundStartOfCurrent = -1;
+      
+      // 找出**当前单元**的真实起点索引
+      for (let i = 0; i < sequence.length; i++) {
+        const p = sequence[i];
+        if (p.type === 'phase') {
+           if (targetType === 'exercise' && p.exerciseIndex === currentEx && p.name === 'exercise-intro') {
+              foundStartOfCurrent = i;
+              break;
+           }
+           if (targetType === 'set' && p.exerciseIndex === currentEx && p.setIndex === currentSet && p.name === 'set-start') {
+              foundStartOfCurrent = i;
+              break;
+           }
+        }
+      }
+
+      // 判断离起点的步数。如果在起点周围（相差不超过 3 步），则跳向上一组，否则只回到本组起点（Restart Current Set）
+      const isJustStarted = (currentIndexRef.current - foundStartOfCurrent) <= 3;
+
+      if (!isJustStarted && foundStartOfCurrent !== -1) {
+         targetIdx = foundStartOfCurrent;
+      } else {
+         let prevIdx = -1;
+         for (let i = foundStartOfCurrent - 1; i >= 0; i--) {
+            const p = sequence[i];
+            if (p.type === 'phase') {
+               if (targetType === 'exercise' && p.exerciseIndex !== undefined && p.exerciseIndex < currentEx && p.name === 'exercise-intro') {
+                  prevIdx = i;
+                  break;
+               }
+               // 如果是上一组，有可能是上一个动作的最后一组
+               if (targetType === 'set' && p.setIndex !== undefined && (p.exerciseIndex < currentEx || (p.exerciseIndex === currentEx && p.setIndex < currentSet)) && p.name === 'set-start') {
+                  prevIdx = i;
+                  break;
+               }
+            }
+         }
+         targetIdx = prevIdx !== -1 ? prevIdx : Math.max(0, foundStartOfCurrent);
+      }
+    }
+
+    if (targetIdx !== currentIndexRef.current) {
+        // 重算进度条
+        let targetTtsCount = 0;
+        for(let i = 0; i < targetIdx; i++) {
+            if(sequence[i].type === 'tts' || sequence[i].type === 'overlay') targetTtsCount++;
+        }
+        ttsProcessedRef.current = targetTtsCount;
+        setProcessedCount(targetTtsCount);
+        
+        playFromIndex(targetIdx);
+    }
+  }, [playerState, playFromIndex]);
 
   const pause = useCallback(() => {
-    console.log('[WP] pause called');
     audioEngine.pause();
-    // pause() 在 Safari 上不支持，忽略错误
-    try {
-      if (window.speechSynthesis?.pause) {
-        window.speechSynthesis.pause();
-      }
-    } catch {}
+    try { if (window.speechSynthesis?.pause) window.speechSynthesis.pause(); } catch {}
     setPlayerState('paused');
   }, []);
 
   const resume = useCallback(() => {
-    console.log('[WP] resume called');
+    // 【修改】调用 resume() 时如果引擎实际上是在 idle 或暂停，且 sequence 未完，重新对接
     audioEngine.resume();
-    // resume() 在 Safari 上不支持，忽略错误
-    try {
-      if (window.speechSynthesis?.resume) {
-        window.speechSynthesis.resume();
-      }
-    } catch {}
+    try { if (window.speechSynthesis?.resume) window.speechSynthesis.resume(); } catch {}
     setPlayerState('playing');
   }, []);
 
   const stop = useCallback(() => {
-    console.log('[WP] stop called, current seq:', workoutSeqRef.current);
-    // 推进序列号，使当前正在运行的 workout 识别为过时并退出
     ++workoutSeqRef.current;
-    console.log('[WP] seq advanced to:', workoutSeqRef.current);
     abortRef.current = true;
     audioEngine.stop();
     cancelAll();
@@ -155,5 +222,6 @@ export default function useWorkoutPlayer({ isReady, synthesize, cancelAll }) {
     pause,
     resume,
     stop,
+    seekTo,
   };
 }

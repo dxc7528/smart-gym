@@ -91,7 +91,7 @@ export default function useWebSpeech() {
 
       utterance.onend = cleanup;
       utterance.onerror = (e) => {
-        if (e.error !== 'canceled') {
+        if (e.error !== 'canceled' && e.error !== 'interrupted') {
           console.warn('[WebSpeech] onerror:', e.error);
         }
         cleanup();
@@ -116,12 +116,8 @@ export default function useWebSpeech() {
   const cancelAll = useCallback(() => {
     // 清理所有挂起的引用
     window.__utterances.clear();
-    // [修复核心] 2. 组件卸载或主动停止时，彻底清除全局队列
-    try {
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-      }
-    } catch (e) {}
+    // 绝对禁止在 componentWillUnmount/useEffect cleanup 等非物理点击处调用 cancel()！
+    // 否则 Safari 会认定这是“脚本强制中止”，进而永久收回允许自动发音的最高权限，导致后续全盘静默死锁。
   }, []);
 
   return {

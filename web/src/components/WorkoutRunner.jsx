@@ -80,6 +80,24 @@ export default function WorkoutRunner({ planName, exercises, onClose }) {
           </button>
         )}
       </div>
+
+      {/* 跳转控制 */}
+      {(player.playerState === 'playing' || player.playerState === 'paused') && (
+        <div className="workout-seek-controls" style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap', marginTop: '1rem' }}>
+          <button className="btn btn-secondary btn-sm" onClick={() => player.seekTo('exercise', 'prev')} title="回到上一个动作，或当前动作的开头">
+            ⏮ 上一动作
+          </button>
+          <button className="btn btn-secondary btn-sm" onClick={() => player.seekTo('set', 'prev')} title="回到上一组，或当前此组的开头">
+            ⏪ 上一组
+          </button>
+          <button className="btn btn-secondary btn-sm" onClick={() => player.seekTo('set', 'next')} title="跳过当前组，进入下一组">
+            下一组 ⏩
+          </button>
+          <button className="btn btn-secondary btn-sm" onClick={() => player.seekTo('exercise', 'next')} title="跳过当前动作，进入下一个动作">
+            下一动作 ⏭
+          </button>
+        </div>
+      )}
     </div>
   );
 }
