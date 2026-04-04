@@ -81,18 +81,8 @@ export default function App() {
               />
             ) : page === 'howto' ? (
               <HowToPage />
-            ) : page === 'plans' && currentPlanId ? (
-              <PlanEditor key={currentPlanId} />
-            ) : page === 'plans' && !currentPlanId ? (
-              <div className="empty-state">
-                <div className="empty-icon">
-                  <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.3">
-                    <path d="M6 5v14M18 5v14M6 12h12M3 5h18M3 19h18"/>
-                  </svg>
-                </div>
-                <h2>{t(lang, 'noPlanTitle')}</h2>
-                <p>{t(lang, 'noPlanDesc')}</p>
-              </div>
+            ) : page === 'plans' ? (
+              <PlanEditor key={currentPlanId || 'new'} />
             ) : (
               <DashboardPage
                 plans={plans}
