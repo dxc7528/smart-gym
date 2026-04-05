@@ -32,8 +32,13 @@ const PlusIcon = () => (
   </svg>
 );
 
-export default function Sidebar() {
+export default function Sidebar({ onNavigate }) {
   const { plans, currentPlanId, selectPlan, setCurrentPlanId, page, setPage, lang } = useContext(AppContext);
+
+  const handleNavigate = (callback) => {
+    if (onNavigate) onNavigate();
+    if (callback) callback();
+  };
 
   const handleNewPlan = () => {
     setCurrentPlanId(null);
@@ -45,21 +50,21 @@ export default function Sidebar() {
       <div className="sidebar-label">{t(lang, 'navLabel')}</div>
       <div
         className={`plan-item${page === 'dashboard' ? ' active' : ''}`}
-        onClick={() => setPage('dashboard')}
+        onClick={() => handleNavigate(() => setPage('dashboard'))}
       >
         <span className="plan-icon"><DashboardIcon /></span>
         <span className="plan-name">{t(lang, 'navDashboard')}</span>
       </div>
       <div
         className={`plan-item${page === 'plans' || page === 'new' ? ' active' : ''}`}
-        onClick={() => { setPage('plans'); if (plans.length && !currentPlanId) selectPlan(plans[0].id); }}
+        onClick={() => handleNavigate(() => { setPage('plans'); if (plans.length && !currentPlanId) selectPlan(plans[0].id); })}
       >
         <span className="plan-icon"><PlanIcon /></span>
         <span className="plan-name">{t(lang, 'navPlans')}</span>
       </div>
       <div
         className={`plan-item${page === 'howto' ? ' active' : ''}`}
-        onClick={() => setPage('howto')}
+        onClick={() => handleNavigate(() => setPage('howto'))}
       >
         <span className="plan-icon"><HelpIcon /></span>
         <span className="plan-name">{t(lang, 'howToUse')}</span>
@@ -70,14 +75,14 @@ export default function Sidebar() {
         <div
           key={plan.id}
           className={`plan-item${plan.id === currentPlanId && page === 'plans' ? ' active' : ''}`}
-          onClick={() => selectPlan(plan.id)}
+          onClick={() => handleNavigate(() => selectPlan(plan.id))}
         >
           <span className="plan-icon"><PlanIcon /></span>
           <span className="plan-name" title={plan.name}>{plan.name}</span>
         </div>
       ))}
 
-      <button className="btn-new-plan" onClick={handleNewPlan}>
+      <button className="btn-new-plan" onClick={() => handleNavigate(handleNewPlan)}>
         <PlusIcon /> {t(lang, 'newPlan')}
       </button>
     </aside>

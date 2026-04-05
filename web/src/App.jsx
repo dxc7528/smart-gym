@@ -20,6 +20,7 @@ seedDefaultPlans();
 
 export default function App() {
   const [page, setPage] = useState('dashboard'); // 'dashboard' | 'plans' | 'howto'
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [plans, setPlans] = useState(() => getAllPlans());
   const [currentPlanId, setCurrentPlanId] = useState(() => {
     const all = getAllPlans();
@@ -68,8 +69,11 @@ export default function App() {
   return (
     <AppContext.Provider value={contextValue}>
       <ToastContext.Provider value={showToast}>
-        <Layout>
-          <Sidebar />
+        <Layout
+          sidebar={<Sidebar />}
+          mobileNavOpen={mobileNavOpen}
+          setMobileNavOpen={setMobileNavOpen}
+        >
           <main>
             {page === 'dashboard' ? (
               <DashboardPage

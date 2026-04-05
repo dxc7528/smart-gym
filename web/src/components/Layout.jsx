@@ -23,12 +23,34 @@ const ChevronIcon = () => (
   </svg>
 );
 
-export default function Layout({ children }) {
+const MenuIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="3" y1="6" x2="21" y2="6"/>
+    <line x1="3" y1="12" x2="21" y2="12"/>
+    <line x1="3" y1="18" x2="21" y2="18"/>
+  </svg>
+);
+
+const CloseIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="6" x2="6" y2="18"/>
+    <line x1="6" y1="6" x2="18" y2="18"/>
+  </svg>
+);
+
+export default function Layout({ children, sidebar, mobileNavOpen, setMobileNavOpen }) {
   const { tts, lang, setLang } = useContext(AppContext);
 
   return (
     <div className="layout">
       <header style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <button
+          className="mobile-menu-btn"
+          onClick={() => setMobileNavOpen(true)}
+          aria-label="Open menu"
+        >
+          <MenuIcon />
+        </button>
         <span className="logo-icon" style={{ color: 'var(--accent)' }}><DumbbellIcon /></span>
         <span className="logo" style={{ marginRight: 'auto' }}>Smart Gym</span>
 
@@ -51,6 +73,29 @@ export default function Layout({ children }) {
         <ModelStatus isReady={tts.isReady} lang={lang} />
         <span className="subtitle" style={{ marginLeft: '1rem' }}>{t(lang, 'subtitle')}</span>
       </header>
+
+      {/* Mobile nav overlay */}
+      {mobileNavOpen && (
+        <div className="mobile-nav-overlay" onClick={() => setMobileNavOpen(false)} />
+      )}
+
+      {/* Mobile nav drawer */}
+      <div className={`mobile-nav-drawer${mobileNavOpen ? ' open' : ''}`}>
+        <div className="mobile-nav-header">
+          <span className="logo" style={{ fontSize: '1.2rem' }}>Smart Gym</span>
+          <button
+            className="mobile-menu-btn"
+            onClick={() => setMobileNavOpen(false)}
+            aria-label="Close menu"
+          >
+            <CloseIcon />
+          </button>
+        </div>
+        <div className="mobile-nav-content">
+          {React.cloneElement(sidebar, { onNavigate: () => setMobileNavOpen(false) })}
+        </div>
+      </div>
+
       {children}
     </div>
   );
