@@ -10,6 +10,12 @@ function HowToEN({ setPage }) {
       </a>
 
       <h1>📖 Parameters Guide</h1>
+      <div className="intro-banner">
+        <p>❌ No more counting seconds in your head while struggling to hold a pose.</p>
+        <p>❌ No more losing track of which set you're on mid-workout.</p>
+        <p>❌ No more guessing the right tempo and giving up on proper form.</p>
+        <p>✅ <strong>This app talks you through every rep</strong> — audio cues tell you exactly when to push, hold, and lower, so you can stay locked in on muscle contraction instead of watching the clock.</p>
+      </div>
       <p className="page-desc">Understand each training parameter to scientifically design your workout rhythm.</p>
 
       {/* Sets */}
@@ -145,6 +151,12 @@ function HowToJA({ setPage }) {
       </a>
 
       <h1>📖 パラメータの説明</h1>
+      <div className="intro-banner">
+        <p>❌ ポーズ保持中に秒を数えるのに必死…</p>
+        <p>❌ 今が何セット目か分からなくなる…</p>
+        <p>❌ 正しいテンポがわからずフォームが雑になる…</p>
+        <p>✅ <strong>このアプリがテンポを音声で誘導</strong> — 「上げて／止めて／下ろして」の音声ガイドが的確な動きを诱导し、時計を見る代わりに筋肉の動きに集中できます。</p>
+      </div>
       <p className="page-desc">各トレーニングパラメータの意味を理解し、効果的なリズムを設計しましょう。</p>
 
       {/* Sets */}
@@ -232,6 +244,12 @@ function HowToZH({ setPage }) {
       </a>
 
       <h1>📖 参数说明</h1>
+      <div className="intro-banner">
+        <p>❌ 动作做到一半，还要分神默数秒数？</p>
+        <p>❌ 记不清这组做完了没有，只能靠猜？</p>
+        <p>❌ 不知道该怎么控制节奏，做的动作总像在赶时间？</p>
+        <p>✅ 这个应用<strong>全程语音引导</strong>——什么时候发力、什么时候停顿、什么时候下放，都有语音提示。你只需要专注在肌肉发力和动作标准上，不用再看时钟。</p>
+      </div>
       <p className="page-desc">了解每个训练参数的含义，帮助你科学设计动作节奏。</p>
 
       {/* 组数 */}

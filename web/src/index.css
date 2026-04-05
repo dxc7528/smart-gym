@@ -763,6 +763,22 @@ textarea:focus {
   font-size: 0.88rem;
   margin-bottom: 40px;
 }
+.how-to-main .intro-banner {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+.how-to-main .intro-banner p {
+  margin: 0 0 6px 0;
+}
+.how-to-main .intro-banner p:last-child {
+  margin-bottom: 0;
+  margin-top: 4px;
+}
 
 .param-section { margin-bottom: 36px; }
 .param-header {
