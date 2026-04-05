@@ -2,7 +2,6 @@ import { useRegisterSW } from 'virtual:pwa-register/react'
 
 export default function PwaUpdater() {
   const {
-    offlineReady: [offlineReady, setOfflineReady],
     needRefresh: [needRefresh],
     updateServiceWorker,
   } = useRegisterSW({
@@ -13,15 +12,6 @@ export default function PwaUpdater() {
       console.error('SW registration error', error)
     },
   })
-
-  if (offlineReady) {
-    setTimeout(() => setOfflineReady(false), 3000)
-    return (
-      <div className="pwa-toast pwa-toast--ready">
-        <span>已准备好离线使用</span>
-      </div>
-    )
-  }
 
   if (needRefresh) {
     return (

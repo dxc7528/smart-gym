@@ -19,7 +19,7 @@ export const ToastContext = createContext(null);
 seedDefaultPlans();
 
 export default function App() {
-  const [page, setPage] = useState('dashboard'); // 'dashboard' | 'plans' | 'howto'
+  const [page, setPage] = useState('plans'); // 'dashboard' | 'plans' | 'howto'
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [plans, setPlans] = useState(() => getAllPlans());
   const [currentPlanId, setCurrentPlanId] = useState(() => {

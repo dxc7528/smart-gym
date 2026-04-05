@@ -1,6 +1,5 @@
 import React, { useContext } from 'react';
 import { AppContext } from '../App.jsx';
-import ModelStatus from './ModelStatus.jsx';
 import { t } from '../utils/i18n.js';
 
 const DumbbellIcon = () => (
@@ -39,7 +38,7 @@ const CloseIcon = () => (
 );
 
 export default function Layout({ children, sidebar, mobileNavOpen, setMobileNavOpen }) {
-  const { tts, lang, setLang } = useContext(AppContext);
+  const { lang, setLang } = useContext(AppContext);
 
   return (
     <div className="layout">
@@ -69,9 +68,6 @@ export default function Layout({ children, sidebar, mobileNavOpen, setMobileNavO
             <span className="lang-chevron"><ChevronIcon /></span>
           </div>
         </div>
-
-        <ModelStatus isReady={tts.isReady} lang={lang} />
-        <span className="subtitle" style={{ marginLeft: '1rem' }}>{t(lang, 'subtitle')}</span>
       </header>
 
       {/* Mobile nav overlay */}
