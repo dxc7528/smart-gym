@@ -1,6 +1,6 @@
 /**
  * useWorkoutPlayer.js — 训练播放控制 Hook
- * 仅依赖原生的 Web Speech API 和 Web Audio API (音效)
+ * 使用 Media Session API + 背景音频保持机制改善 iOS Safari 锁屏中断问题
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
@@ -8,6 +8,59 @@ import audioEngine from '../audio/audioEngine.js';
 import { buildWorkoutSequence, estimateWorkoutDuration } from '../audio/workoutPlayer.js';
 
 const SAMPLE_RATE = 24000;
+
+// iOS Safari 背景音频保持机制：持续播放静音的 <audio> 元素
+let _bgAudioElement = null;
+let _mediaSessionRegistered = false;
+
+function setupMediaSession(planName) {
+  if (!_mediaSessionRegistered && 'mediaSession' in navigator) {
+    try {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: planName || 'Workout',
+        artist: 'Smart Gym',
+      });
+
+      navigator.mediaSession.setActionHandler('play', () => {});
+      navigator.mediaSession.setActionHandler('pause', () => {});
+      navigator.mediaSession.setActionHandler('stop', () => {});
+
+      _mediaSessionRegistered = true;
+      console.log('[WorkoutPlayer] MediaSession registered');
+    } catch (e) {
+      console.warn('[WorkoutPlayer] MediaSession registration failed:', e);
+    }
+  }
+}
+
+function startBackgroundAudio() {
+  if (_bgAudioElement) return;
+
+  // 创建一个静音的音频上下文源作为背景音频
+  // iOS Safari 会因为有活跃的 <audio>/AudioContext 而延迟挂起页面
+  try {
+    _bgAudioElement = new Audio();
+    _bgAudioElement.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkdGVoAAAAA==';
+    _bgAudioElement.loop = true;
+    _bgAudioElement.volume = 0.01; // 几乎静音但保持播放状态
+    _bgAudioElement.play().catch(() => {});
+    console.log('[WorkoutPlayer] Background audio started');
+  } catch (e) {
+    console.warn('[WorkoutPlayer] Background audio failed:', e);
+  }
+}
+
+function stopBackgroundAudio() {
+  if (_bgAudioElement) {
+    try {
+      _bgAudioElement.pause();
+      _bgAudioElement.src = '';
+      _bgAudioElement = null;
+    } catch {}
+    console.log('[WorkoutPlayer] Background audio stopped');
+  }
+  _mediaSessionRegistered = false;
+}
 
 export default function useWorkoutPlayer({ isReady, synthesize, cancelAll, audioLang = 'zh' }) {
   const [playerState, setPlayerState] = useState('idle'); // idle | preparing | playing | paused | complete
@@ -27,6 +80,13 @@ export default function useWorkoutPlayer({ isReady, synthesize, cancelAll, audio
   useEffect(() => {
     audioLangRef.current = audioLang;
   }, [audioLang]);
+
+  // 清理背景音频当 workout 完成或组件卸载
+  useEffect(() => {
+    return () => {
+      stopBackgroundAudio();
+    };
+  }, []);
 
   const playFromIndex = useCallback(async (startIndex) => {
     const seq = ++workoutSeqRef.current;
@@ -93,18 +153,24 @@ export default function useWorkoutPlayer({ isReady, synthesize, cancelAll, audio
   const startWorkout = useCallback(async (planName, exercises) => {
     if (!isReady) return;
 
+    // 激活 Media Session（iOS 锁屏保持的关键）
+    setupMediaSession(planName);
+
+    // 启动背景音频（帮助 iOS 延迟挂起页面）
+    startBackgroundAudio();
+
     setPlayerState('preparing');
     setCurrentPhase({ name: 'preparing', label: '正在准备训练序列...' });
     currentPhaseRef.current = null;
 
     const sequence = buildWorkoutSequence(planName, exercises, audioLangRef.current);
     sequenceRef.current = sequence;
-    
+
     setTotalDuration(estimateWorkoutDuration(exercises));
 
     const ttsItems = sequence.filter(s => s.type === 'tts' || s.type === 'overlay');
     setTotalCount(ttsItems.length);
-    
+
     ttsProcessedRef.current = 0;
     setProcessedCount(0);
 
@@ -213,6 +279,7 @@ export default function useWorkoutPlayer({ isReady, synthesize, cancelAll, audio
     abortRef.current = true;
     audioEngine.stop();
     cancelAll();
+    stopBackgroundAudio(); // 清理背景音频
     setPlayerState('idle');
     setCurrentPhase(null);
   }, [cancelAll]);
